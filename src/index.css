@@ -84,13 +84,29 @@ body {
 
 /* Keep the dense desktop navigation usable without letting it widen the page. */
 .navbar-ticker {
-  flex-wrap: wrap;
-  gap: 8px 20px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.navbar-ticker-track {
+  display: inline-flex;
+  align-items: center;
+  gap: 28px;
+  min-width: max-content;
+  animation: navbar-ticker-scroll 32s linear infinite;
+}
+
+@keyframes navbar-ticker-scroll {
+  from {
+    transform: translateX(100vw);
+  }
+  to {
+    transform: translateX(-100%);
+  }
 }
 
 .navbar-ticker-message {
-  min-width: 0;
-  flex: 1 1 420px;
+  flex: 0 0 auto;
 }
 
 .navbar-ticker-message span:last-child {
@@ -98,9 +114,7 @@ body {
 }
 
 .navbar-ticker-actions {
-  flex: 0 1 auto;
-  justify-content: flex-end;
-  flex-wrap: wrap;
+  flex: 0 0 auto;
 }
 
 .navbar-main-row {
@@ -145,28 +159,7 @@ body {
   }
 
   .navbar-ticker {
-    padding: 8px 14px !important;
-    align-items: flex-start !important;
-  }
-
-  .navbar-ticker-message {
-    flex-basis: 100%;
-    align-items: flex-start !important;
-  }
-
-  .navbar-ticker-actions {
-    width: 100%;
-    justify-content: flex-start;
-    gap: 8px !important;
-  }
-
-  .navbar-ticker-actions > span {
-    display: none;
-  }
-
-  .navbar-ticker-actions button {
-    min-width: 0;
-    font-size: 0.72rem !important;
+    padding: 8px 0 !important;
   }
 
   .navbar-main-row {

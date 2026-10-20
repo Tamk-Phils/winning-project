@@ -69,44 +69,46 @@ export const Navbar: React.FC<NavbarProps> = ({
         alignItems: 'center',
         borderBottom: '1px solid rgba(255,255,255,0.08)'
       }}>
-        <div className="navbar-ticker-message" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span className="live-dot"></span>
-          <span>
-            <strong>Today's Live Agribusiness Stream:</strong> 18,420 kg fresh produce moved • <strong>88.6% direct farmer payout</strong> • Average 11h from soil to cold-hub
-          </span>
-        </div>
+        <div className="navbar-ticker-track">
+          <div className="navbar-ticker-message" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="live-dot"></span>
+            <span>
+              <strong>Today's Live Agribusiness Stream:</strong> 18,420 kg fresh produce moved • <strong>88.6% direct farmer payout</strong> • Average 11h from soil to cold-hub
+            </span>
+          </div>
 
-        <div className="navbar-ticker-actions" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <button 
-            onClick={() => setIsSupabaseModalOpen(true)}
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '6px', 
-              color: supabaseConfig.isConnected ? '#34d399' : '#fbbf24',
-              cursor: 'pointer',
-              fontSize: '0.78rem'
-            }}
-          >
-            <Database size={13} />
-            <span>{supabaseConfig.isConnected ? 'Supabase: Live Connected' : 'Supabase: Offline Mode (Click to Connect)'}</span>
-          </button>
-          <span style={{ opacity: 0.4 }}>|</span>
-          <button 
-            onClick={() => setIsRFQModalOpen(true)}
-            style={{ color: '#ffffff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-          >
-            <FileSpreadsheet size={13} />
-            <span>Wholesale RFQ</span>
-          </button>
-          <span style={{ opacity: 0.4 }}>|</span>
-          <button 
-            onClick={() => setActiveView('onboarding')}
-            style={{ color: '#34d399', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}
-          >
-            <Tractor size={13} />
-            <span>Sell on AgriFlow</span>
-          </button>
+          <div className="navbar-ticker-actions" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <button
+              onClick={() => setIsSupabaseModalOpen(true)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                color: supabaseConfig.isConnected ? '#34d399' : '#fbbf24',
+                cursor: 'pointer',
+                fontSize: '0.78rem'
+              }}
+            >
+              <Database size={13} />
+              <span>{supabaseConfig.isConnected ? 'Supabase: Live Connected' : 'Supabase: Offline Mode (Click to Connect)'}</span>
+            </button>
+            <span style={{ opacity: 0.4 }}>|</span>
+            <button
+              onClick={() => setIsRFQModalOpen(true)}
+              style={{ color: '#ffffff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+            >
+              <FileSpreadsheet size={13} />
+              <span>Wholesale RFQ</span>
+            </button>
+            <span style={{ opacity: 0.4 }}>|</span>
+            <button
+              onClick={() => setActiveView('onboarding')}
+              style={{ color: '#34d399', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}
+            >
+              <Tractor size={13} />
+              <span>Sell on AgriFlow</span>
+            </button>
+          </div>
         </div>
       </div>
 
