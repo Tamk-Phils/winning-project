@@ -190,8 +190,86 @@ body {
   }
 
   .product-grid {
-    grid-template-columns: minmax(0, 1fr) !important;
-    gap: 16px !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .product-card {
+    border-radius: var(--radius-md) !important;
+  }
+
+  .product-card-image {
+    height: 72px !important;
+  }
+
+  .product-card-image .badge,
+  .product-card-image > div:last-child {
+    display: none !important;
+  }
+
+  .product-card-image button {
+    width: 24px !important;
+    height: 24px !important;
+    top: 5px !important;
+    right: 5px !important;
+  }
+
+  .product-card-body {
+    padding: 7px !important;
+  }
+
+  .product-card-farm,
+  .product-card-variety,
+  .product-card-tier,
+  .product-card-availability,
+  .product-card-inspect {
+    display: none !important;
+  }
+
+  .product-card-title {
+    display: -webkit-box;
+    overflow: hidden;
+    margin-bottom: 5px !important;
+    font-size: 0.7rem !important;
+    line-height: 1.2 !important;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .product-card-price {
+    margin-bottom: 6px !important;
+  }
+
+  .product-card-price > div > div > span:first-child,
+  .product-card-price > div > span:first-child {
+    font-size: 0.85rem !important;
+  }
+
+  .product-card-price > div > div > span:last-child,
+  .product-card-price > div > span:last-child,
+  .product-card-price .badge {
+    display: none !important;
+  }
+
+  .product-card-actions {
+    gap: 0 !important;
+  }
+
+  .product-card-stepper {
+    display: none !important;
+  }
+
+  .product-card-add {
+    min-width: 0 !important;
+    width: 100%;
+    padding: 5px 2px !important;
+    font-size: 0.62rem !important;
+    gap: 2px !important;
+  }
+
+  .product-card-add svg {
+    width: 12px;
+    height: 12px;
   }
 }
 

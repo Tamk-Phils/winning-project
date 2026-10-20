@@ -60,10 +60,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   );
 
   return (
-    <div className="card-hover" style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
+    <div className="card-hover product-card" style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
       
       {/* Product Image Area */}
-      <div style={{ position: 'relative', height: '220px', overflow: 'hidden', backgroundColor: 'var(--bg-subtle)' }}>
+      <div className="product-card-image" style={{ position: 'relative', height: '220px', overflow: 'hidden', backgroundColor: 'var(--bg-subtle)' }}>
         <img 
           src={product.imageUrl} 
           alt={product.name}
@@ -147,11 +147,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       </div>
 
       {/* Card Body */}
-      <div style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+      <div className="product-card-body" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', flex: 1 }}>
         
         {/* Farm Attribution Row */}
         <div 
           onClick={() => onSelectFarm(product.farmId)}
+          className="product-card-farm"
           style={{ 
             display: 'flex', 
             alignItems: 'center', 
@@ -175,6 +176,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* Product Title & Variety */}
         <h3 
           onClick={() => onSelectProduct(product)}
+          className="product-card-title"
           style={{ 
             fontSize: '1.08rem', 
             fontWeight: 700, 
@@ -190,12 +192,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {product.name}
         </h3>
 
-        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '14px', fontStyle: 'italic' }}>
+        <p className="product-card-variety" style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '14px', fontStyle: 'italic' }}>
           Variety: {product.variety}
         </p>
 
         {/* Tier Switcher (Retail vs Wholesale) */}
-        <div style={{ 
+        <div className="product-card-tier" style={{
           display: 'grid', 
           gridTemplateColumns: '1fr 1fr', 
           backgroundColor: 'var(--bg-subtle)', 
@@ -243,7 +245,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </div>
 
         {/* Price & Unit Display */}
-        <div style={{ 
+        <div className="product-card-price" style={{
           display: 'flex', 
           alignItems: 'baseline', 
           justifyContent: 'space-between', 
@@ -285,7 +287,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </div>
 
         {/* Harvest Availability Bar */}
-        <div style={{ marginBottom: '16px', marginTop: 'auto' }}>
+        <div className="product-card-availability" style={{ marginBottom: '16px', marginTop: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
             <span>Available from morning batch:</span>
             <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{product.stockQuantity} {product.stockUnit}</span>
@@ -301,10 +303,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </div>
 
         {/* Quantity Stepper & Add to Cart Action */}
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div className="product-card-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           
           {/* Stepper */}
-          <div style={{ 
+          <div className="product-card-stepper" style={{
             display: 'flex', 
             alignItems: 'center', 
             backgroundColor: 'var(--bg-subtle)', 
@@ -334,7 +336,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {/* Add Button */}
           <button 
             onClick={handleAdd}
-            className={`btn ${isAddedRecently ? 'btn-secondary' : 'btn-primary'}`}
+            className={`btn product-card-add ${isAddedRecently ? 'btn-secondary' : 'btn-primary'}`}
             style={{ 
               flex: 1, 
               padding: '9px 12px', 
@@ -360,6 +362,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {/* Inspect Button */}
           <button
             onClick={() => onSelectProduct(product)}
+            className="product-card-inspect"
             style={{ 
               width: '36px', 
               height: '36px', 
