@@ -140,7 +140,7 @@ export const MarketplaceView: React.FC<MarketplaceViewProps> = ({
             </p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="marketplace-header-controls" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <button
               onClick={onOpenRFQ}
               className="btn btn-secondary btn-sm"
@@ -278,9 +278,9 @@ export const MarketplaceView: React.FC<MarketplaceViewProps> = ({
 
         {/* Product Cards Grid */}
         {sortedProducts.length > 0 ? (
-          <div style={{ 
+          <div className="product-grid" style={{
             display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
+            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
             gap: '24px' 
           }}>
             {sortedProducts.map((product) => (

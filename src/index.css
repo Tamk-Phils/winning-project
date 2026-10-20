@@ -82,6 +82,126 @@ body {
   overflow-x: hidden;
 }
 
+/* Keep the dense desktop navigation usable without letting it widen the page. */
+.navbar-ticker {
+  flex-wrap: wrap;
+  gap: 8px 20px;
+}
+
+.navbar-ticker-message {
+  min-width: 0;
+  flex: 1 1 420px;
+}
+
+.navbar-ticker-message span:last-child {
+  min-width: 0;
+}
+
+.navbar-ticker-actions {
+  flex: 0 1 auto;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.navbar-main-row {
+  min-width: 0;
+}
+
+.navbar-search {
+  min-width: 160px;
+}
+
+.navbar-search input {
+  width: 100%;
+}
+
+.product-grid > * {
+  min-width: 0;
+}
+
+@media (max-width: 1100px) {
+  .navbar-main-row {
+    flex-wrap: wrap;
+    row-gap: 12px;
+  }
+
+  .navbar-search {
+    order: 3;
+    flex: 1 1 100% !important;
+    max-width: none !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .navbar-ticker {
+    padding: 8px 14px !important;
+    align-items: flex-start !important;
+  }
+
+  .navbar-ticker-message {
+    flex-basis: 100%;
+    align-items: flex-start !important;
+  }
+
+  .navbar-ticker-actions {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 8px !important;
+  }
+
+  .navbar-ticker-actions > span {
+    display: none;
+  }
+
+  .navbar-ticker-actions button {
+    min-width: 0;
+    font-size: 0.72rem !important;
+  }
+
+  .navbar-main-row {
+    gap: 10px !important;
+  }
+
+  .navbar-main-row > .navbar-region {
+    order: 4;
+    width: 100%;
+  }
+
+  .navbar-region select {
+    width: 100%;
+  }
+
+  .navbar-actions > button:first-child {
+    display: none !important;
+  }
+
+  .marketplace-header-controls {
+    width: 100%;
+    align-items: stretch !important;
+    flex-direction: column;
+  }
+
+  .marketplace-header-controls > * {
+    width: 100%;
+  }
+
+  .product-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 16px !important;
+  }
+}
+
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
   color: var(--text-main);

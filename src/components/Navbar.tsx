@@ -59,7 +59,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="sticky-header" style={{ position: 'sticky', top: 0, zIndex: 100 }}>
       {/* Top Banner: Real-Time Transparency Ticker */}
-      <div style={{ 
+      <div className="navbar-ticker" style={{
         backgroundColor: 'var(--primary-950)', 
         color: '#d1fae5', 
         fontSize: '0.8rem', 
@@ -69,14 +69,14 @@ export const Navbar: React.FC<NavbarProps> = ({
         alignItems: 'center',
         borderBottom: '1px solid rgba(255,255,255,0.08)'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="navbar-ticker-message" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span className="live-dot"></span>
           <span>
             <strong>Today's Live Agribusiness Stream:</strong> 18,420 kg fresh produce moved • <strong>88.6% direct farmer payout</strong> • Average 11h from soil to cold-hub
           </span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div className="navbar-ticker-actions" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <button 
             onClick={() => setIsSupabaseModalOpen(true)}
             style={{ 
@@ -112,7 +112,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Main Glass Navbar */}
       <nav className="glass-nav" style={{ padding: '12px 0' }}>
-        <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px' }}>
+        <div className="container navbar-main-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px' }}>
           
           {/* Brand Logo */}
           <div 
@@ -162,7 +162,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Search Bar */}
-          <div style={{ flex: 1, maxWidth: '340px', position: 'relative' }}>
+          <div className="navbar-search" style={{ flex: 1, maxWidth: '340px', position: 'relative' }}>
             <Search 
               size={16} 
               style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-faint)' }} 
@@ -186,7 +186,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Sourcing Region Selector */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+          <div className="navbar-region" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
             <MapPin size={15} color="var(--primary-600)" />
             <select
               value={selectedRegion}
@@ -211,7 +211,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Quick Action CTA & Cart */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+          <div className="navbar-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
             {/* Farmer Command Hub */}
             <button
               onClick={() => setActiveView('farmer_portal')}
