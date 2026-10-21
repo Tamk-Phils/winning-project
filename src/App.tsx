@@ -383,7 +383,7 @@ export function App() {
   const unreadNotificationCount = notifications.filter(n => !n.isRead).length;
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="site-shell" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
 
       {/* Global Navigation */}
       <Navbar

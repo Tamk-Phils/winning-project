@@ -72,7 +72,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   ];
 
   return (
-    <header className="sticky-header" style={{ position: 'sticky', top: 0, zIndex: 100 }}>
+    <header className="sticky-header site-header" style={{ position: 'sticky', top: 0, zIndex: 100 }}>
       {/* Top Banner: Real-Time Transparency Ticker */}
       <div className="navbar-ticker" style={{
         backgroundColor: 'var(--primary-950)', 
