@@ -88,7 +88,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="navbar-ticker-message" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span className="live-dot"></span>
             <span>
-              <strong>Cameroon & Regional Agribusiness Stream:</strong> 28,400 kg produce indexed • <strong>91.2% direct farmer payout</strong> • PGI Penja Pepper & Foumbot Plantain Corridors Active
+              <strong>Cameroon farm stream:</strong> Penja Pepper • Foumbot Plantain • Douala cold-chain
             </span>
           </div>
 
@@ -238,8 +238,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <option value="West Highlands (Foumbot/Bafoussam)">West Highlands (Foumbot)</option>
               <option value="Southwest & Mt. Cameroon">Southwest & Mt. Cameroon (Buea)</option>
               <option value="Northwest & Grassfields">Northwest (Oku Mountain)</option>
-              <option value="Pacific West">Pacific West (Export Partner)</option>
-              <option value="California Central Valley">California Valley (Partner)</option>
+              <option value="International Export Corridor">CEMAC & International Export</option>
             </select>
           </div>
 
@@ -368,7 +367,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Secondary Sub-Navigation Links Row */}
-        <div style={{ borderTop: '1px solid var(--border-subtle)', marginTop: '10px', paddingTop: '8px' }}>
+        <div className="navbar-secondary-row" style={{ borderTop: '1px solid var(--border-subtle)', marginTop: '10px', paddingTop: '8px' }}>
           <div className="container" style={{ display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto', scrollbarWidth: 'none' }}>
             {navLinks.map((link) => {
               const isCurrent = activeView === link.view;

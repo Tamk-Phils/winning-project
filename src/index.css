@@ -159,24 +159,73 @@ body {
   }
 
   .navbar-ticker {
-    padding: 8px 0 !important;
+    height: 30px;
+    padding: 6px 0 !important;
+    font-size: 0.68rem !important;
   }
 
   .navbar-main-row {
-    gap: 10px !important;
+    gap: 8px !important;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .navbar-main-row > div:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .navbar-main-row > div:first-child > div:last-child {
+    display: none;
+  }
+
+  .navbar-main-row > div:first-child > div:first-child {
+    gap: 8px !important;
+  }
+
+  .navbar-main-row > div:first-child > div:first-child > div:first-child {
+    width: 42px !important;
+    height: 42px !important;
+  }
+
+  .navbar-main-row > div:first-child span:first-child {
+    font-size: 1.45rem !important;
+  }
+
+  .navbar-search {
+    order: 5;
+    flex: 1 1 100% !important;
+    min-width: 0;
+    max-width: none !important;
+  }
+
+  .navbar-search input {
+    padding-top: 9px !important;
+    padding-bottom: 9px !important;
   }
 
   .navbar-main-row > .navbar-region {
-    order: 4;
-    width: 100%;
-  }
-
-  .navbar-region select {
-    width: 100%;
+    display: none !important;
   }
 
   .navbar-actions > button:first-child {
     display: none !important;
+  }
+
+  .navbar-actions {
+    gap: 5px !important;
+  }
+
+  .navbar-actions > button {
+    padding: 8px !important;
+  }
+
+  .navbar-actions > button:nth-last-child(2) {
+    display: none !important;
+  }
+
+  .navbar-secondary-row {
+    display: none;
   }
 
   .marketplace-header-controls {

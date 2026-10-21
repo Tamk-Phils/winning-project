@@ -31,7 +31,7 @@ export const FarmerOnboardingView: React.FC<FarmerOnboardingViewProps> = ({
   const [phone, setPhone] = useState<string>('+1 (509) 555-0133');
   const [location, setLocation] = useState<string>('Yakima River Valley');
   const [state, setState] = useState<string>('Washington');
-  const [region, setRegion] = useState<Farm['region']>('Pacific West');
+  const [region, setRegion] = useState<Farm['region']>('Littoral & Coastal');
   const [acreage, setAcreage] = useState<number>(65);
   const [tagline, setTagline] = useState<string>('Certified organic heritage stone fruit, sweet cherries, and lavender');
   const [story, setStory] = useState<string>('Founded on glacial alluvial soils, we utilize zero synthetic nitrogen and rely on multi-species cover crops to nourish our heritage apricot, peach, and heirloom apple orchards.');
@@ -355,8 +355,12 @@ export const FarmerOnboardingView: React.FC<FarmerOnboardingViewProps> = ({
                           onChange={(e) => setRegion(e.target.value as any)} 
                           className="form-input"
                         >
-                          <option value="Pacific West">Pacific West (Oregon / Washington)</option>
-                          <option value="California Central Valley">California Central Valley</option>
+                          <option value="Littoral & Coastal">Littoral & Coastal (Douala / Penja)</option>
+                          <option value="Centre & Yaoundé">Centre & Yaoundé</option>
+                          <option value="West Highlands (Foumbot/Bafoussam)">West Highlands (Foumbot / Bafoussam)</option>
+                          <option value="Southwest & Mt. Cameroon">Southwest & Mt. Cameroon</option>
+                          <option value="Northwest & Grassfields">Northwest & Grassfields</option>
+                          <option value="North & Adamawa">North & Adamawa</option>
                           <option value="Midwest Prairies">Midwest Prairies</option>
                           <option value="Sunbelt South">Sunbelt South & Blue Ridge</option>
                         </select>

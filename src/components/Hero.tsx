@@ -9,37 +9,44 @@ import {
   Package
 } from 'lucide-react';
 import type { ProductCategory } from '../types';
-import { DataUnavailableState } from './DataUnavailableState';
 
 interface HeroProps {
   onExploreClick: () => void;
   onPostRFQClick: () => void;
   onCategorySelect: (cat: ProductCategory) => void;
-  isLiveDataAvailable: boolean;
 }
 
 export const Hero: React.FC<HeroProps> = ({
   onExploreClick,
   onPostRFQClick,
   onCategorySelect,
-  isLiveDataAvailable,
 }) => {
-  if (!isLiveDataAvailable) {
-    return <DataUnavailableState title="Marketplace data is not connected" message="Connect Supabase and add approved supplier and product records before showing marketplace activity." />;
-  }
-
   return (
     <div style={{ position: 'relative', overflow: 'hidden', backgroundColor: 'var(--primary-950)', color: '#ffffff' }}>
       
-      {/* Background Hero Image with Deep Contrast Overlay */}
+      {/* Cameroon farm video with a restrained contrast overlay. */}
+      <video
+        autoPlay
+        muted
+        loop
+        playsInline
+        poster="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1920&q=85"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          opacity: 0.35,
+          filter: 'saturate(1.15)'
+        }}
+      >
+        <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" type="video/mp4" />
+      </video>
       <div style={{
         position: 'absolute',
         inset: 0,
-        backgroundImage: `url('https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1920&q=80')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center 40%',
-        opacity: 0.28,
-        filter: 'saturate(1.2)'
+        background: 'linear-gradient(180deg, rgba(5,27,17,0.52), rgba(5,27,17,0.82))'
       }} />
 
       {/* Atmospheric Radial Glow */}
@@ -72,9 +79,9 @@ export const Hero: React.FC<HeroProps> = ({
             color: '#a7f3d0'
           }}>
             <Sparkles size={16} color="#34d399" />
-            <span>Next-Generation Farm-to-Market Exchange</span>
+            <span>Cameroon’s Farm-to-Market Exchange</span>
             <span style={{ color: 'rgba(255,255,255,0.4)' }}>•</span>
-            <span style={{ color: '#fbbf24' }}>Autumn Harvest Active</span>
+            <span style={{ color: '#fbbf24' }}>Littoral to West Highlands</span>
           </div>
         </div>
 
@@ -88,14 +95,14 @@ export const Hero: React.FC<HeroProps> = ({
             marginBottom: '20px',
             color: '#ffffff'
           }}>
-            Real Agricultural Harvest. <br />
+            Cameroon’s harvest, <br />
             <span style={{ 
               background: 'linear-gradient(90deg, #6ee7b7 0%, #38c182 50%, #fbbf24 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               display: 'inline-block'
             }}>
-              Direct From Source to Market.
+              direct from source to market.
             </span>
           </h1>
 
@@ -108,9 +115,8 @@ export const Hero: React.FC<HeroProps> = ({
             margin: '0 auto',
             opacity: 0.92
           }}>
-            Bypassing industrial middleman markups. Connecting certified regenerative family farms directly to 
-            commercial kitchens, grocery co-ops, and households. Tracked from soil to doorstep with 
-            guaranteed cold-chain freshness in hours, not weeks.
+            Discover produce from Cameroon’s family farms and cooperatives, from PGI Penja Pepper and Foumbot vegetables to
+            plantain, cocoa, honey, and ginger. Built for buyers in Douala, Yaoundé, Buea, and regional CEMAC trade routes.
           </p>
 
           {/* Action CTAs */}
@@ -171,9 +177,9 @@ export const Hero: React.FC<HeroProps> = ({
               </div>
               <span style={{ fontSize: '1.3rem', fontWeight: 800, color: '#ffffff' }}>11 Hours Avg</span>
             </div>
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#ecfdf5' }}>Farm-Gate to Cold-Hub</h3>
+            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#ecfdf5' }}>Farm-Gate to Douala Hub</h3>
             <p style={{ fontSize: '0.84rem', color: '#a7f3d0', opacity: 0.85, margin: 0 }}>
-              Harvested at dawn, packed in breathable wax-free totes, and chill-transported the same day.
+              Harvested at dawn, graded locally, and prepared for verified cold-chain dispatch.
             </p>
           </div>
 
@@ -195,7 +201,7 @@ export const Hero: React.FC<HeroProps> = ({
             </div>
             <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#ecfdf5' }}>Farmer Direct Revenue</h3>
             <p style={{ fontSize: '0.84rem', color: '#a7f3d0', opacity: 0.85, margin: 0 }}>
-              Conventional grocery pays farmers 14.3¢ on the dollar. AgriFlow returns 88¢+ directly to farm bank accounts.
+              Clear pricing and direct supplier terms for Cameroon’s growers and buyers.
             </p>
           </div>
 
@@ -217,7 +223,7 @@ export const Hero: React.FC<HeroProps> = ({
             </div>
             <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#ecfdf5' }}>Unbroken Cold-Chain</h3>
             <p style={{ fontSize: '0.84rem', color: '#a7f3d0', opacity: 0.85, margin: 0 }}>
-              Real-time temperature telemetry from farm refrigeration to refrigerated dispatch vehicle.
+              Track verified dispatch information when a connected hub record is available.
             </p>
           </div>
 
@@ -239,7 +245,7 @@ export const Hero: React.FC<HeroProps> = ({
             </div>
             <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#ecfdf5' }}>Living Soil & Organic</h3>
             <p style={{ fontSize: '0.84rem', color: '#a7f3d0', opacity: 0.85, margin: 0 }}>
-              Demeter Biodynamic, ROC Regenerative, & USDA Organic certifications audited on each batch.
+              See each supplier’s actual certifications, practices, and privacy settings.
             </p>
           </div>
 

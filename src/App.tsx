@@ -417,7 +417,6 @@ export function App() {
         {activeView === 'marketplace' && (
           <>
             <Hero
-              isLiveDataAvailable={supabaseConfig.isConnected && (products.length > 0 || farms.length > 0)}
               onExploreClick={() => {
                 const el = document.getElementById('catalog-anchor');
                 if (el) el.scrollIntoView({ behavior: 'smooth' });
