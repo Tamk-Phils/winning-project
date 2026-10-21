@@ -1,22 +1,5 @@
 import React from 'react';
-import { 
-  Sprout, 
-  ShoppingCart, 
-  Tractor, 
-  Store, 
-  Database, 
-  MapPin, 
-  FileSpreadsheet, 
-  Search,
-  Package,
-  Building2,
-  ThermometerSnowflake,
-  Radio,
-  MessageSquare,
-  Bell,
-  Mic,
-  ShieldCheck
-} from 'lucide-react';
+import { Bell, Search, ShoppingCart, Sprout, Tractor } from 'lucide-react';
 import type { CartItem, AppView } from '../types';
 import type { SupabaseConfig } from '../lib/supabase';
 
@@ -44,373 +27,67 @@ export const Navbar: React.FC<NavbarProps> = ({
   setActiveView,
   cart,
   setIsCartOpen,
-  selectedRegion,
-  setSelectedRegion,
   searchQuery,
   setSearchQuery,
-  supabaseConfig,
-  setIsSupabaseModalOpen,
-  setIsRFQModalOpen,
   unreadNotificationCount = 0,
   onOpenNotifications,
-  onOpenVoiceAssistant,
-  onOpenPrivacyModal,
-  chatUnreadCount = 1,
 }) => {
-  const cartTotalCount = cart.reduce((acc, item) => acc + item.quantity, 0);
-
-  const navLinks: { view: AppView; label: string; icon: React.ReactNode; badge?: string }[] = [
-    { view: 'marketplace', label: 'Produce Catalog', icon: <Store size={15} /> },
-    { view: 'demand_radar', label: 'Demand Radar', icon: <Radio size={15} />, badge: 'LIVE DEMAND' },
-    { view: 'live_chat', label: 'Live Chat', icon: <MessageSquare size={15} />, badge: chatUnreadCount > 0 ? `${chatUnreadCount}` : undefined },
-    { view: 'wholesale_hub', label: 'Wholesale B2B', icon: <Building2 size={15} /> },
-    { view: 'csa_boxes', label: 'Bounty Boxes', icon: <Package size={15} /> },
-    { view: 'farms', label: 'Verified Farms', icon: <Sprout size={15} /> },
-    { view: 'logistics', label: 'Cold-Chain Hubs', icon: <ThermometerSnowflake size={15} /> },
-    { view: 'orders', label: 'Live Tracker', icon: <Radio size={15} /> },
-    { view: 'admin_dashboard', label: 'Admin Portal', icon: <ShieldCheck size={15} /> },
+  const cartTotalCount = cart.reduce((total, item) => total + item.quantity, 0);
+  const navItems: { view: AppView; label: string }[] = [
+    { view: 'marketplace', label: 'Shop' },
+    { view: 'demand_radar', label: 'Discover' },
+    { view: 'farms', label: 'Connect' },
   ];
 
   return (
-    <header className="sticky-header site-header" style={{ position: 'sticky', top: 0, zIndex: 100 }}>
-      {/* Top Banner: Real-Time Transparency Ticker */}
-      <div className="navbar-ticker" style={{
-        backgroundColor: 'var(--primary-950)', 
-        color: '#d1fae5', 
-        fontSize: '0.8rem', 
-        padding: '6px 20px', 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        borderBottom: '1px solid rgba(255,255,255,0.08)'
-      }}>
-        <div className="navbar-ticker-track">
-          <div className="navbar-ticker-message" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span className="live-dot"></span>
-            <span>
-              <strong>Cameroon farm stream:</strong> Penja Pepper • Foumbot Plantain • Douala cold-chain
-            </span>
-          </div>
+    <header className="site-header" style={{ position: 'sticky', top: 0, zIndex: 100 }}>
+      <nav className="glass-nav reference-nav">
+        <div className="container reference-nav-row">
+          <button className="reference-brand" type="button" onClick={() => setActiveView('marketplace')}>
+            <span className="reference-brand-mark"><Sprout size={20} /></span>
+            <span className="reference-brand-name">AgriFlow</span>
+            <span className="reference-brand-tag">Direct</span>
+          </button>
 
-          <div className="navbar-ticker-actions" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <button
-              onClick={() => setIsSupabaseModalOpen(true)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                color: supabaseConfig.isConnected ? '#34d399' : '#fbbf24',
-                cursor: 'pointer',
-                fontSize: '0.78rem',
-                background: 'none',
-                border: 'none'
-              }}
-            >
-              <Database size={13} />
-              <span>{supabaseConfig.isConnected ? 'Supabase: Live Connected' : 'Supabase: Offline Mode (Click to Connect)'}</span>
-            </button>
-            <span style={{ opacity: 0.4 }}>|</span>
-            <button
-              onClick={() => setIsRFQModalOpen(true)}
-              style={{ color: '#ffffff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', background: 'none', border: 'none' }}
-            >
-              <FileSpreadsheet size={13} />
-              <span>Wholesale RFQ</span>
-            </button>
-            <span style={{ opacity: 0.4 }}>|</span>
-            <button
-              onClick={() => setActiveView('onboarding')}
-              style={{ color: '#34d399', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600, background: 'none', border: 'none' }}
-            >
-              <Tractor size={13} />
-              <span>Sell on AgriFlow</span>
-            </button>
-            {onOpenPrivacyModal && (
-              <>
-                <span style={{ opacity: 0.4 }}>|</span>
-                <button
-                  onClick={onOpenPrivacyModal}
-                  style={{ color: '#6ee7b7', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600, background: 'none', border: 'none' }}
-                >
-                  <ShieldCheck size={13} />
-                  <span>Privacy Shield</span>
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Main Glass Navbar */}
-      <nav className="glass-nav" style={{ padding: '12px 0' }}>
-        <div className="container navbar-main-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px' }}>
-          
-          {/* Brand Logo */}
-          <div 
-            onClick={() => setActiveView('marketplace')}
-            style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', flexShrink: 0 }}
-          >
-            <div style={{ 
-              width: '40px', 
-              height: '40px', 
-              borderRadius: '12px', 
-              background: 'linear-gradient(135deg, var(--primary-600) 0%, var(--primary-900) 100%)',
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(15, 70, 44, 0.25)',
-              color: '#ffffff'
-            }}>
-              <Sprout size={22} />
-            </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ 
-                  fontFamily: 'var(--font-heading)', 
-                  fontWeight: 800, 
-                  fontSize: '1.35rem', 
-                  letterSpacing: '-0.02em', 
-                  color: 'var(--primary-950)' 
-                }}>
-                  AgriFlow
-                </span>
-                <span style={{ 
-                  fontSize: '0.65rem', 
-                  fontWeight: 700, 
-                  background: 'var(--primary-100)', 
-                  color: 'var(--primary-800)', 
-                  padding: '2px 6px', 
-                  borderRadius: '4px',
-                  textTransform: 'uppercase'
-                }}>
-                  Direct
-                </span>
-              </div>
-              <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 500, margin: 0 }}>
-                Agricultural Exchange & Demand Discovery
-              </p>
-            </div>
-          </div>
-
-          {/* Search Bar */}
-          <div className="navbar-search" style={{ flex: 1, maxWidth: '320px', position: 'relative' }}>
-            <Search 
-              size={16} 
-              style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-faint)' }} 
-            />
-            <input 
-              type="text"
-              placeholder="Search Penja pepper, plantain, ginger..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="form-input"
-              style={{ 
-                paddingLeft: '38px', 
-                backgroundColor: 'rgba(255,255,255,0.9)', 
-                borderColor: 'var(--border-color)',
-                borderRadius: 'var(--radius-full)',
-                paddingTop: '8px',
-                paddingBottom: '8px',
-                fontSize: '0.86rem'
-              }}
-            />
-          </div>
-
-          {/* Sourcing Region Selector with Cameroon Agribusiness Zones */}
-          <div className="navbar-region" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-            <MapPin size={15} color="var(--primary-600)" />
-            <select
-              value={selectedRegion}
-              onChange={(e) => setSelectedRegion(e.target.value)}
-              style={{ 
-                background: 'transparent', 
-                border: '1px solid var(--border-color)', 
-                padding: '6px 10px', 
-                borderRadius: 'var(--radius-md)',
-                fontSize: '0.82rem',
-                color: 'var(--text-main)',
-                fontWeight: 600,
-                cursor: 'pointer'
-              }}
-            >
-              <option value="all">All Sourcing Regions</option>
-              <option value="Littoral & Coastal">Littoral & Njombé-Penja</option>
-              <option value="West Highlands (Foumbot/Bafoussam)">West Highlands (Foumbot)</option>
-              <option value="Southwest & Mt. Cameroon">Southwest & Mt. Cameroon (Buea)</option>
-              <option value="Northwest & Grassfields">Northwest (Oku Mountain)</option>
-              <option value="International Export Corridor">CEMAC & International Export</option>
-            </select>
-          </div>
-
-          {/* Quick Action CTA, Voice Assistant, Notification Bell, Cart */}
-          <div className="navbar-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-            
-            {/* Voice Assistant Trigger */}
-            {onOpenVoiceAssistant && (
+          <div className="reference-nav-links" aria-label="Primary navigation">
+            {navItems.map((item) => (
               <button
+                key={item.view}
                 type="button"
-                onClick={onOpenVoiceAssistant}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '8px 12px',
-                  borderRadius: 'var(--radius-md)',
-                  fontSize: '0.82rem',
-                  fontWeight: 700,
-                  backgroundColor: 'var(--primary-50)',
-                  color: 'var(--primary-800)',
-                  border: '1px solid var(--primary-200)',
-                  cursor: 'pointer'
-                }}
-                title="Voice Assistant for Farmers (English & Pidgin)"
+                className={activeView === item.view ? 'is-active' : ''}
+                onClick={() => setActiveView(item.view)}
               >
-                <Mic size={15} color="var(--primary-700)" />
-                <span className="hide-on-mobile">Voice AI</span>
+                {item.label}
               </button>
-            )}
+            ))}
+          </div>
 
-            {/* Notification Bell */}
+          <div className="reference-nav-tools">
+            <label className="reference-search" aria-label="Search produce">
+              <Search size={16} />
+              <input
+                type="search"
+                placeholder="Search"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+              />
+            </label>
             {onOpenNotifications && (
-              <button
-                type="button"
-                onClick={onOpenNotifications}
-                style={{
-                  position: 'relative',
-                  padding: '9px 12px',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-color)',
-                  backgroundColor: '#ffffff',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-                aria-label="View Notifications"
-              >
-                <Bell size={17} color="var(--primary-800)" />
-                {unreadNotificationCount > 0 && (
-                  <span style={{
-                    position: 'absolute',
-                    top: '-5px',
-                    right: '-5px',
-                    backgroundColor: 'var(--earth-500)',
-                    color: '#ffffff',
-                    fontSize: '0.68rem',
-                    fontWeight: 800,
-                    width: '18px',
-                    height: '18px',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    {unreadNotificationCount}
-                  </span>
-                )}
+              <button className="reference-icon-button" type="button" onClick={onOpenNotifications} aria-label="Notifications">
+                <Bell size={17} />
+                {unreadNotificationCount > 0 && <span className="reference-count">{unreadNotificationCount}</span>}
               </button>
             )}
-
-            {/* Farmer Command Hub */}
-            <button
-              onClick={() => setActiveView('farmer_portal')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '8px 14px',
-                borderRadius: 'var(--radius-md)',
-                fontSize: '0.85rem',
-                fontWeight: 700,
-                transition: 'all var(--trans-fast)',
-                backgroundColor: activeView === 'farmer_portal' ? 'var(--primary-900)' : 'var(--bg-subtle)',
-                color: activeView === 'farmer_portal' ? '#ffffff' : 'var(--text-main)',
-                border: '1px solid var(--border-color)',
-                cursor: 'pointer'
-              }}
-            >
-              <Tractor size={15} color={activeView === 'farmer_portal' ? '#ffffff' : 'var(--primary-700)'} />
-              <span className="hide-on-mobile">Farmer Portal</span>
+            <button className="reference-icon-button" type="button" onClick={() => setIsCartOpen(true)} aria-label="Cart">
+              <ShoppingCart size={18} />
+              {cartTotalCount > 0 && <span className="reference-count">{cartTotalCount}</span>}
             </button>
-
-            {/* Cart Button */}
-            <button
-              onClick={() => setIsCartOpen(true)}
-              className="btn btn-secondary"
-              style={{ position: 'relative', padding: '9px 14px' }}
-              aria-label="View Cart"
-            >
-              <ShoppingCart size={18} color="var(--primary-700)" />
-              {cartTotalCount > 0 && (
-                <span style={{ 
-                  position: 'absolute', 
-                  top: '-6px', 
-                  right: '-6px', 
-                  background: 'var(--earth-500)', 
-                  color: '#ffffff', 
-                  fontSize: '0.72rem', 
-                  fontWeight: 800, 
-                  width: '20px', 
-                  height: '20px', 
-                  borderRadius: '50%',
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  boxShadow: '0 2px 6px rgba(234, 88, 12, 0.4)'
-                }}>
-                  {cartTotalCount}
-                </span>
-              )}
+            <button className="reference-farmer-button" type="button" onClick={() => setActiveView('farmer_portal')}>
+              <Tractor size={15} />
+              <span>Farmer Portal</span>
             </button>
           </div>
-
         </div>
-
-        {/* Secondary Sub-Navigation Links Row */}
-        <div className="navbar-secondary-row" style={{ borderTop: '1px solid var(--border-subtle)', marginTop: '10px', paddingTop: '8px' }}>
-          <div className="container" style={{ display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto', scrollbarWidth: 'none' }}>
-            {navLinks.map((link) => {
-              const isCurrent = activeView === link.view;
-              return (
-                <button
-                  key={link.view}
-                  onClick={() => setActiveView(link.view)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '6px 12px',
-                    borderRadius: 'var(--radius-md)',
-                    fontSize: '0.84rem',
-                    fontWeight: isCurrent ? 700 : 500,
-                    backgroundColor: isCurrent ? 'var(--primary-100)' : 'transparent',
-                    color: isCurrent ? 'var(--primary-900)' : 'var(--text-muted)',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    transition: 'all var(--trans-fast)',
-                    border: 'none'
-                  }}
-                >
-                  <span style={{ color: isCurrent ? 'var(--primary-700)' : 'inherit' }}>{link.icon}</span>
-                  <span>{link.label}</span>
-                  {link.badge && (
-                    <span style={{
-                      fontSize: '0.65rem',
-                      fontWeight: 800,
-                      backgroundColor: link.badge === 'LIVE DEMAND' ? '#22c55e' : 'var(--primary-700)',
-                      color: '#ffffff',
-                      padding: '1px 6px',
-                      borderRadius: '10px'
-                    }}>
-                      {link.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
       </nav>
     </header>
   );
