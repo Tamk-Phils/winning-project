@@ -16,6 +16,7 @@ import {
   Scale, 
   Trash2
 } from 'lucide-react';
+import { DataUnavailableState } from './DataUnavailableState';
 
 interface FarmerPortalProps {
   farms: Farm[];
@@ -37,7 +38,6 @@ export const FarmerPortal: React.FC<FarmerPortalProps> = ({
   const [successToast, setSuccessToast] = useState<string | null>(null);
 
   const currentFarm = farms.find(f => f.id === selectedFarmId) || farms[0];
-  const farmProducts = products.filter(p => p.farmId === currentFarm?.id);
 
   // New Produce Form State
   const [formData, setFormData] = useState<ProducerBatchSubmission>({
@@ -60,6 +60,12 @@ export const FarmerPortal: React.FC<FarmerPortalProps> = ({
     imageUrl: 'https://images.unsplash.com/photo-1597362925123-77861d3fbac7?auto=format&fit=crop&w=800&q=80',
   });
 
+  if (!currentFarm) {
+    return <DataUnavailableState title="Supplier profile not found" message="Register and save a supplier profile before opening the Farmer Portal. Connect Supabase first so the profile is stored as real application data." />;
+  }
+
+  const farmProducts = products.filter(p => p.farmId === currentFarm.id);
+
   // Preset sample photography for fast listing
   const sampleProduceImages = [
     { label: 'Tomatoes', url: 'https://images.unsplash.com/photo-1597362925123-77861d3fbac7?auto=format&fit=crop&w=800&q=80' },
@@ -76,7 +82,7 @@ export const FarmerPortal: React.FC<FarmerPortalProps> = ({
 
   const handleSubmitNewBatch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.produceName.trim()) return;
+    if (!formData.produceName.trim() || !currentFarm) return;
 
     const newProduct: Product = {
       id: `prod-${Date.now()}`,

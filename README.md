@@ -6,7 +6,7 @@ AgriFlow is a React/Vite agricultural marketplace. Marketplace, supplier, order,
 
 1. Copy `.env.example` to `.env.local`.
 2. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` using the public anon key only.
-3. Run the SQL schema exported as `SUPABASE_SQL_SCHEMA` in `src/lib/supabase.ts` in the Supabase SQL editor.
+3. Open [supabase/schema.sql](supabase/schema.sql), copy it into the Supabase SQL editor, and run it.
 4. Configure Row Level Security for the authenticated roles before enabling writes in production.
 5. Run `npm run build` and deploy with the same public environment variables.
 
