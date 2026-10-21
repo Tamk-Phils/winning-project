@@ -224,10 +224,10 @@ export async function fetchBulkRFQs(): Promise<BulkRFQ[]> {
 // -------------------------------------------------------------
 // SUPABASE SQL MIGRATION SCHEMA GENERATOR
 // -------------------------------------------------------------
-export const SUPABASE_SQL_SCHEMA = `-- AgriFlow Agribusiness Platform Schema
+export const SUPABASE_SQL_SCHEMA = `-- AgriFlow Platform Database Schema & Migrations
 -- Run this script in your Supabase SQL Editor (https://supabase.com/dashboard/project/_/sql)
 
--- 1. Create FARMS Table
+-- 1. Create FARMS / SUPPLIER PROFILES Table
 CREATE TABLE IF NOT EXISTS public.farms (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -236,6 +236,7 @@ CREATE TABLE IF NOT EXISTS public.farms (
   state TEXT,
   coordinates JSONB,
   region TEXT,
+  country TEXT DEFAULT 'Cameroon',
   ownerName TEXT,
   story TEXT,
   avatar TEXT,
@@ -250,6 +251,10 @@ CREATE TABLE IF NOT EXISTS public.farms (
   directPayoutShare NUMERIC DEFAULT 88,
   phone TEXT,
   email TEXT,
+  whatsappNumber TEXT,
+  privacySettings JSONB DEFAULT '{"showPhonePublicly": false, "showEmailPublicly": true, "showExactAddress": false, "allowWhatsAppDirect": true, "preferredContactMethod": "whatsapp"}',
+  verificationBadges JSONB DEFAULT '{"identityVerified": true, "businessVerified": false, "exportCertified": false, "trustedTrader": false}',
+  minaderRegNumber TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -267,8 +272,10 @@ CREATE TABLE IF NOT EXISTS public.products (
   imageUrl TEXT NOT NULL,
   galleryUrls TEXT[],
   retailPrice NUMERIC NOT NULL,
+  retailPriceXaf NUMERIC,
   retailUnit TEXT NOT NULL,
   wholesalePrice NUMERIC NOT NULL,
+  wholesalePriceXaf NUMERIC,
   wholesaleUnit TEXT NOT NULL,
   wholesaleMinOrder NUMERIC DEFAULT 10,
   stockQuantity NUMERIC NOT NULL,
@@ -288,10 +295,93 @@ CREATE TABLE IF NOT EXISTS public.products (
   featured BOOLEAN DEFAULT false,
   rating NUMERIC DEFAULT 4.9,
   reviewsCount INT DEFAULT 0,
+  originCountry TEXT DEFAULT 'Cameroon',
+  exportReady BOOLEAN DEFAULT true,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. Create ORDERS Table
+-- 3. Create DEMAND OPPORTUNITIES Table (Demand Radar)
+CREATE TABLE IF NOT EXISTS public.demand_opportunities (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  productSought TEXT NOT NULL,
+  category TEXT NOT NULL,
+  quantityNeeded NUMERIC NOT NULL,
+  unit TEXT NOT NULL,
+  qualityGrade TEXT,
+  targetPrice NUMERIC,
+  targetPriceUnit TEXT,
+  currency TEXT DEFAULT 'XAF',
+  destinationLocation TEXT NOT NULL,
+  destinationCountry TEXT NOT NULL,
+  deadlineDate TEXT,
+  buyerOrgName TEXT NOT NULL,
+  buyerType TEXT NOT NULL,
+  buyerContactMethod TEXT DEFAULT 'whatsapp',
+  buyerContactInfo TEXT,
+  originalSourceUrl TEXT NOT NULL,
+  sourceName TEXT NOT NULL,
+  sourceCredibilityScore NUMERIC DEFAULT 90,
+  discoveryTimestamp TIMESTAMPTZ DEFAULT NOW(),
+  lastVerificationTimestamp TIMESTAMPTZ DEFAULT NOW(),
+  status TEXT DEFAULT 'active_request',
+  contactPermissionStatus TEXT DEFAULT 'direct_outreach_permitted',
+  extractionConfidence NUMERIC DEFAULT 95,
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 4. Create CONVERSATIONS & CHAT MESSAGES Table
+CREATE TABLE IF NOT EXISTS public.conversations (
+  id TEXT PRIMARY KEY,
+  buyerId TEXT NOT NULL,
+  buyerName TEXT NOT NULL,
+  buyerAvatar TEXT,
+  buyerLocation TEXT,
+  supplierId TEXT NOT NULL,
+  supplierName TEXT NOT NULL,
+  supplierAvatar TEXT,
+  relatedOpportunityId TEXT,
+  relatedProductId TEXT,
+  subject TEXT NOT NULL,
+  lastMessageText TEXT,
+  lastMessageTimestamp TEXT,
+  unreadCountSupplier INT DEFAULT 0,
+  unreadCountBuyer INT DEFAULT 0,
+  status TEXT DEFAULT 'active',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.chat_messages (
+  id TEXT PRIMARY KEY,
+  conversationId TEXT REFERENCES public.conversations(id) ON DELETE CASCADE,
+  senderId TEXT NOT NULL,
+  senderRole TEXT NOT NULL,
+  senderName TEXT NOT NULL,
+  messageText TEXT NOT NULL,
+  attachmentUrl TEXT,
+  attachmentType TEXT,
+  timestamp TEXT NOT NULL,
+  read BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 5. Create IN-APP NOTIFICATIONS Table
+CREATE TABLE IF NOT EXISTS public.notifications (
+  id TEXT PRIMARY KEY,
+  userId TEXT,
+  type TEXT NOT NULL,
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  timestamp TEXT NOT NULL,
+  isRead BOOLEAN DEFAULT false,
+  targetView TEXT,
+  targetId TEXT,
+  actionLabel TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 6. Create ORDERS Table
 CREATE TABLE IF NOT EXISTS public.orders (
   id TEXT PRIMARY KEY,
   items JSONB NOT NULL,
@@ -309,12 +399,13 @@ CREATE TABLE IF NOT EXISTS public.orders (
   farmerDirectPayout NUMERIC NOT NULL,
   platformFee NUMERIC NOT NULL,
   total NUMERIC NOT NULL,
+  currency TEXT DEFAULT 'XAF',
   status TEXT DEFAULT 'confirmed',
   timeline JSONB,
   createdAt TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 4. Create BULK RFQ Table
+-- 7. Create BULK RFQ Table
 CREATE TABLE IF NOT EXISTS public.bulk_rfqs (
   id TEXT PRIMARY KEY,
   companyName TEXT NOT NULL,
@@ -333,17 +424,45 @@ CREATE TABLE IF NOT EXISTS public.bulk_rfqs (
   createdAt TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Enable Row Level Security (RLS) & Allow public read/write for demo
+-- 8. Create DISPUTES & SAFETY REPORTS Table
+CREATE TABLE IF NOT EXISTS public.disputes (
+  id TEXT PRIMARY KEY,
+  reporterName TEXT NOT NULL,
+  reporterRole TEXT NOT NULL,
+  reporterContact TEXT,
+  reportedEntityName TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  details TEXT NOT NULL,
+  status TEXT DEFAULT 'open_investigation',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 9. Enable Row Level Security (RLS) & Policies
 ALTER TABLE public.farms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.demand_opportunities ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.conversations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.chat_messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.bulk_rfqs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.disputes ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow public read on farms" ON public.farms FOR SELECT USING (true);
-CREATE POLICY "Allow public read on products" ON public.products FOR SELECT USING (true);
-CREATE POLICY "Allow public insert on products" ON public.products FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public read on orders" ON public.orders FOR SELECT USING (true);
-CREATE POLICY "Allow public insert on orders" ON public.orders FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public read on bulk_rfqs" ON public.bulk_rfqs FOR SELECT USING (true);
-CREATE POLICY "Allow public insert on bulk_rfqs" ON public.bulk_rfqs FOR INSERT WITH CHECK (true);
+-- Public Read Policies
+CREATE POLICY "Public read farms" ON public.farms FOR SELECT USING (true);
+CREATE POLICY "Public read products" ON public.products FOR SELECT USING (true);
+CREATE POLICY "Public read demand_opportunities" ON public.demand_opportunities FOR SELECT USING (true);
+CREATE POLICY "Public read conversations" ON public.conversations FOR SELECT USING (true);
+CREATE POLICY "Public read chat_messages" ON public.chat_messages FOR SELECT USING (true);
+CREATE POLICY "Public read notifications" ON public.notifications FOR SELECT USING (true);
+CREATE POLICY "Public read orders" ON public.orders FOR SELECT USING (true);
+CREATE POLICY "Public read bulk_rfqs" ON public.bulk_rfqs FOR SELECT USING (true);
+
+-- Authenticated / Permitted Insert Policies
+CREATE POLICY "Insert products" ON public.products FOR INSERT WITH CHECK (true);
+CREATE POLICY "Insert chat_messages" ON public.chat_messages FOR INSERT WITH CHECK (true);
+CREATE POLICY "Insert orders" ON public.orders FOR INSERT WITH CHECK (true);
+CREATE POLICY "Insert bulk_rfqs" ON public.bulk_rfqs FOR INSERT WITH CHECK (true);
+CREATE POLICY "Insert disputes" ON public.disputes FOR INSERT WITH CHECK (true);
 `;
+

@@ -12,7 +12,10 @@ import {
   Building2,
   ThermometerSnowflake,
   Radio,
-  Globe
+  MessageSquare,
+  Bell,
+  Mic,
+  ShieldCheck
 } from 'lucide-react';
 import type { CartItem, AppView } from '../types';
 import type { SupabaseConfig } from '../lib/supabase';
@@ -29,6 +32,11 @@ interface NavbarProps {
   supabaseConfig: SupabaseConfig;
   setIsSupabaseModalOpen: (open: boolean) => void;
   setIsRFQModalOpen: (open: boolean) => void;
+  unreadNotificationCount?: number;
+  onOpenNotifications?: () => void;
+  onOpenVoiceAssistant?: () => void;
+  onOpenPrivacyModal?: () => void;
+  chatUnreadCount?: number;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -43,17 +51,24 @@ export const Navbar: React.FC<NavbarProps> = ({
   supabaseConfig,
   setIsSupabaseModalOpen,
   setIsRFQModalOpen,
+  unreadNotificationCount = 0,
+  onOpenNotifications,
+  onOpenVoiceAssistant,
+  onOpenPrivacyModal,
+  chatUnreadCount = 1,
 }) => {
   const cartTotalCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
-  const navLinks: { view: AppView; label: string; icon: React.ReactNode }[] = [
+  const navLinks: { view: AppView; label: string; icon: React.ReactNode; badge?: string }[] = [
     { view: 'marketplace', label: 'Produce Catalog', icon: <Store size={15} /> },
-    { view: 'csa_boxes', label: 'CSA Bounty Boxes', icon: <Package size={15} /> },
+    { view: 'demand_radar', label: 'Demand Radar', icon: <Radio size={15} />, badge: 'LIVE DEMAND' },
+    { view: 'live_chat', label: 'Live Chat', icon: <MessageSquare size={15} />, badge: chatUnreadCount > 0 ? `${chatUnreadCount}` : undefined },
     { view: 'wholesale_hub', label: 'Wholesale B2B', icon: <Building2 size={15} /> },
+    { view: 'csa_boxes', label: 'Bounty Boxes', icon: <Package size={15} /> },
     { view: 'farms', label: 'Verified Farms', icon: <Sprout size={15} /> },
     { view: 'logistics', label: 'Cold-Chain Hubs', icon: <ThermometerSnowflake size={15} /> },
     { view: 'orders', label: 'Live Tracker', icon: <Radio size={15} /> },
-    { view: 'impact', label: 'Soil Impact', icon: <Globe size={15} /> },
+    { view: 'admin_dashboard', label: 'Admin Portal', icon: <ShieldCheck size={15} /> },
   ];
 
   return (
@@ -73,7 +88,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="navbar-ticker-message" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span className="live-dot"></span>
             <span>
-              <strong>Today's Live Agribusiness Stream:</strong> 18,420 kg fresh produce moved • <strong>88.6% direct farmer payout</strong> • Average 11h from soil to cold-hub
+              <strong>Cameroon & Regional Agribusiness Stream:</strong> 28,400 kg produce indexed • <strong>91.2% direct farmer payout</strong> • PGI Penja Pepper & Foumbot Plantain Corridors Active
             </span>
           </div>
 
@@ -86,7 +101,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                 gap: '6px',
                 color: supabaseConfig.isConnected ? '#34d399' : '#fbbf24',
                 cursor: 'pointer',
-                fontSize: '0.78rem'
+                fontSize: '0.78rem',
+                background: 'none',
+                border: 'none'
               }}
             >
               <Database size={13} />
@@ -95,7 +112,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span style={{ opacity: 0.4 }}>|</span>
             <button
               onClick={() => setIsRFQModalOpen(true)}
-              style={{ color: '#ffffff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+              style={{ color: '#ffffff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', background: 'none', border: 'none' }}
             >
               <FileSpreadsheet size={13} />
               <span>Wholesale RFQ</span>
@@ -103,11 +120,23 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span style={{ opacity: 0.4 }}>|</span>
             <button
               onClick={() => setActiveView('onboarding')}
-              style={{ color: '#34d399', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}
+              style={{ color: '#34d399', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600, background: 'none', border: 'none' }}
             >
               <Tractor size={13} />
               <span>Sell on AgriFlow</span>
             </button>
+            {onOpenPrivacyModal && (
+              <>
+                <span style={{ opacity: 0.4 }}>|</span>
+                <button
+                  onClick={onOpenPrivacyModal}
+                  style={{ color: '#6ee7b7', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600, background: 'none', border: 'none' }}
+                >
+                  <ShieldCheck size={13} />
+                  <span>Privacy Shield</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -158,20 +187,20 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </span>
               </div>
               <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 500, margin: 0 }}>
-                Farm-to-Market Exchange
+                Agricultural Exchange & Demand Discovery
               </p>
             </div>
           </div>
 
           {/* Search Bar */}
-          <div className="navbar-search" style={{ flex: 1, maxWidth: '340px', position: 'relative' }}>
+          <div className="navbar-search" style={{ flex: 1, maxWidth: '320px', position: 'relative' }}>
             <Search 
               size={16} 
               style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-faint)' }} 
             />
             <input 
               type="text"
-              placeholder="Search produce, cultivar, or farm..."
+              placeholder="Search Penja pepper, plantain, ginger..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="form-input"
@@ -182,12 +211,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                 borderRadius: 'var(--radius-full)',
                 paddingTop: '8px',
                 paddingBottom: '8px',
-                fontSize: '0.88rem'
+                fontSize: '0.86rem'
               }}
             />
           </div>
 
-          {/* Sourcing Region Selector */}
+          {/* Sourcing Region Selector with Cameroon Agribusiness Zones */}
           <div className="navbar-region" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
             <MapPin size={15} color="var(--primary-600)" />
             <select
@@ -205,15 +234,84 @@ export const Navbar: React.FC<NavbarProps> = ({
               }}
             >
               <option value="all">All Sourcing Regions</option>
-              <option value="Pacific West">Pacific West (Cascadia)</option>
-              <option value="California Central Valley">California Valley</option>
-              <option value="Midwest Prairies">Midwest Prairies</option>
-              <option value="Sunbelt South">Sunbelt Blue Ridge</option>
+              <option value="Littoral & Coastal">Littoral & Njombé-Penja</option>
+              <option value="West Highlands (Foumbot/Bafoussam)">West Highlands (Foumbot)</option>
+              <option value="Southwest & Mt. Cameroon">Southwest & Mt. Cameroon (Buea)</option>
+              <option value="Northwest & Grassfields">Northwest (Oku Mountain)</option>
+              <option value="Pacific West">Pacific West (Export Partner)</option>
+              <option value="California Central Valley">California Valley (Partner)</option>
             </select>
           </div>
 
-          {/* Quick Action CTA & Cart */}
+          {/* Quick Action CTA, Voice Assistant, Notification Bell, Cart */}
           <div className="navbar-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+            
+            {/* Voice Assistant Trigger */}
+            {onOpenVoiceAssistant && (
+              <button
+                type="button"
+                onClick={onOpenVoiceAssistant}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 12px',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  backgroundColor: 'var(--primary-50)',
+                  color: 'var(--primary-800)',
+                  border: '1px solid var(--primary-200)',
+                  cursor: 'pointer'
+                }}
+                title="Voice Assistant for Farmers (English & Pidgin)"
+              >
+                <Mic size={15} color="var(--primary-700)" />
+                <span className="hide-on-mobile">Voice AI</span>
+              </button>
+            )}
+
+            {/* Notification Bell */}
+            {onOpenNotifications && (
+              <button
+                type="button"
+                onClick={onOpenNotifications}
+                style={{
+                  position: 'relative',
+                  padding: '9px 12px',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border-color)',
+                  backgroundColor: '#ffffff',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+                aria-label="View Notifications"
+              >
+                <Bell size={17} color="var(--primary-800)" />
+                {unreadNotificationCount > 0 && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '-5px',
+                    right: '-5px',
+                    backgroundColor: 'var(--earth-500)',
+                    color: '#ffffff',
+                    fontSize: '0.68rem',
+                    fontWeight: 800,
+                    width: '18px',
+                    height: '18px',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    {unreadNotificationCount}
+                  </span>
+                )}
+              </button>
+            )}
+
             {/* Farmer Command Hub */}
             <button
               onClick={() => setActiveView('farmer_portal')}
@@ -233,7 +331,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               }}
             >
               <Tractor size={15} color={activeView === 'farmer_portal' ? '#ffffff' : 'var(--primary-700)'} />
-              <span>Farmer Portal</span>
+              <span className="hide-on-mobile">Farmer Portal</span>
             </button>
 
             {/* Cart Button */}
@@ -284,17 +382,30 @@ export const Navbar: React.FC<NavbarProps> = ({
                     gap: '6px',
                     padding: '6px 12px',
                     borderRadius: 'var(--radius-md)',
-                    fontSize: '0.85rem',
+                    fontSize: '0.84rem',
                     fontWeight: isCurrent ? 700 : 500,
                     backgroundColor: isCurrent ? 'var(--primary-100)' : 'transparent',
                     color: isCurrent ? 'var(--primary-900)' : 'var(--text-muted)',
                     cursor: 'pointer',
                     whiteSpace: 'nowrap',
-                    transition: 'all var(--trans-fast)'
+                    transition: 'all var(--trans-fast)',
+                    border: 'none'
                   }}
                 >
                   <span style={{ color: isCurrent ? 'var(--primary-700)' : 'inherit' }}>{link.icon}</span>
                   <span>{link.label}</span>
+                  {link.badge && (
+                    <span style={{
+                      fontSize: '0.65rem',
+                      fontWeight: 800,
+                      backgroundColor: link.badge === 'LIVE DEMAND' ? '#22c55e' : 'var(--primary-700)',
+                      color: '#ffffff',
+                      padding: '1px 6px',
+                      borderRadius: '10px'
+                    }}>
+                      {link.badge}
+                    </span>
+                  )}
                 </button>
               );
             })}
