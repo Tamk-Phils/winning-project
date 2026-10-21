@@ -43,6 +43,14 @@ export const DemandRadarView: React.FC<DemandRadarViewProps> = ({
   farms,
   onOpenLiveChat,
 }) => {
+  const demandVolume = opportunities.reduce((total, opportunity) => {
+    const multiplier = /mt|ton/i.test(opportunity.unit) ? 1000 : 1;
+    return total + opportunity.quantityNeeded * multiplier;
+  }, 0);
+  const averageCredibility = opportunities.length
+    ? opportunities.reduce((total, opportunity) => total + opportunity.sourceCredibilityScore, 0) / opportunities.length
+    : 0;
+  const connectedSources = [...new Set(opportunities.map(opportunity => opportunity.sourceName))];
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCountry, setSelectedCountry] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -177,11 +185,11 @@ export const DemandRadarView: React.FC<DemandRadarViewProps> = ({
             </div>
             <div>
               <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Demand Volume</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fbbf24' }}>56.7 Metric Tons</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fbbf24' }}>{(demandVolume / 1000).toFixed(1)} Metric Tons</div>
             </div>
             <div>
               <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Avg. Source Credibility</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#6ee7b7' }}>94.2% Verified</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#6ee7b7' }}>{averageCredibility.toFixed(1)}% Verified</div>
             </div>
           </div>
         </div>
@@ -211,10 +219,10 @@ export const DemandRadarView: React.FC<DemandRadarViewProps> = ({
           }}></div>
           <div>
             <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--primary-950)' }}>
-              Discovery Sources: 4 Public Boards Connected
+              {connectedSources.length ? `Discovery Sources: ${connectedSources.length} Connected` : 'Discovery sources are not configured'}
             </div>
             <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-              UN FAO Agro-Bulletin • CEMAC Food Reserve Portal • MINADER Cameroon • Dubai DMCC Exchange
+              {connectedSources.length ? connectedSources.join(' • ') : 'No source records are available yet.'}
             </div>
           </div>
         </div>

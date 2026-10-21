@@ -1,77 +1,30 @@
-import type { Conversation, ChatMessage } from '../types';
-import { INITIAL_CONVERSATIONS, INITIAL_CHAT_MESSAGES } from '../data/mockData';
 import { getSupabase } from './supabase';
 import { addNotification } from './communicationServices';
-
-const STORAGE_KEY_CONVERSATIONS = 'agriflow_conversations_v1';
-const STORAGE_KEY_MESSAGES_PREFIX = 'agriflow_messages_';
+import type { ChatMessage, Conversation } from '../types';
 
 export async function fetchConversations(): Promise<Conversation[]> {
   const sb = getSupabase();
-  if (sb) {
-    try {
-      const { data, error } = await sb
-        .from('conversations')
-        .select('*')
-        .order('lastMessageTimestamp', { ascending: false });
-      if (!error && data && data.length > 0) {
-        return data as Conversation[];
-      }
-    } catch (e) {
-      console.warn('Supabase fetchConversations fallback to local', e);
-    }
-  }
-
+  if (!sb) return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_CONVERSATIONS);
-    if (!raw) return INITIAL_CONVERSATIONS;
-    return JSON.parse(raw);
-  } catch {
-    return INITIAL_CONVERSATIONS;
-  }
-}
-
-export function saveConversations(conversations: Conversation[]): void {
-  try {
-    localStorage.setItem(STORAGE_KEY_CONVERSATIONS, JSON.stringify(conversations));
+    const { data, error } = await sb.from('conversations').select('*').order('lastMessageTimestamp', { ascending: false });
+    if (error) throw error;
+    return (data || []) as Conversation[];
   } catch (e) {
-    console.error('Failed to save conversations', e);
+    console.warn('Supabase fetchConversations error', e);
+    return [];
   }
 }
 
 export async function fetchChatMessages(conversationId: string): Promise<ChatMessage[]> {
   const sb = getSupabase();
-  if (sb) {
-    try {
-      const { data, error } = await sb
-        .from('chat_messages')
-        .select('*')
-        .eq('conversationId', conversationId)
-        .order('timestamp', { ascending: true });
-      if (!error && data && data.length > 0) {
-        return data as ChatMessage[];
-      }
-    } catch (e) {
-      console.warn('Supabase fetchChatMessages fallback to local', e);
-    }
-  }
-
+  if (!sb) return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_MESSAGES_PREFIX + conversationId);
-    if (!raw) {
-      return INITIAL_CHAT_MESSAGES[conversationId] || [];
-    }
-    return JSON.parse(raw);
-  } catch {
-    return INITIAL_CHAT_MESSAGES[conversationId] || [];
-  }
-}
-
-export function saveChatMessages(conversationId: string, messages: ChatMessage[]): void {
-  try {
-    localStorage.setItem(STORAGE_KEY_MESSAGES_PREFIX + conversationId, JSON.stringify(messages));
+    const { data, error } = await sb.from('chat_messages').select('*').eq('conversationId', conversationId).order('timestamp', { ascending: true });
+    if (error) throw error;
+    return (data || []) as ChatMessage[];
   } catch (e) {
-    console.error('Failed to save messages', e);
+    console.warn('Supabase fetchChatMessages error', e);
+    return [];
   }
 }
 
@@ -100,24 +53,15 @@ export async function sendChatMessage(
     read: true
   };
 
-  // 1. Update message thread
-  const existing = await fetchChatMessages(conversationId);
-  const updated = [...existing, newMessage];
-  saveChatMessages(conversationId, updated);
+  const sb = getSupabase();
+  if (!sb) throw new Error('Live chat requires a configured Supabase project.');
 
-  // 2. Update conversation header
+  const { error: messageError } = await sb.from('chat_messages').insert([newMessage]);
+  if (messageError) throw messageError;
+
+  // Update the conversation header in the same database.
   const conversations = await fetchConversations();
-  const updatedConversations = conversations.map(c => {
-    if (c.id === conversationId) {
-      return {
-        ...c,
-        lastMessageText: messageText,
-        lastMessageTimestamp: 'Just now'
-      };
-    }
-    return c;
-  });
-  saveConversations(updatedConversations);
+  await sb.from('conversations').update({ lastMessageText: messageText, lastMessageTimestamp: new Date().toISOString() }).eq('id', conversationId);
 
   // 3. Trigger In-App Notification for recipient
   const targetConv = conversations.find(c => c.id === conversationId);
@@ -134,16 +78,6 @@ export async function sendChatMessage(
       targetId: conversationId,
       actionLabel: 'Reply in Chat'
     });
-  }
-
-  // 4. Supabase sync if connected
-  const sb = getSupabase();
-  if (sb) {
-    try {
-      await sb.from('chat_messages').insert([newMessage]);
-    } catch (e) {
-      console.warn('Supabase chat sync error', e);
-    }
   }
 
   return newMessage;
@@ -178,8 +112,10 @@ export async function createConversation(
     status: 'active'
   };
 
-  const conversations = await fetchConversations();
-  saveConversations([newConv, ...conversations]);
+  const sb = getSupabase();
+  if (!sb) throw new Error('Live chat requires a configured Supabase project.');
+  const { error } = await sb.from('conversations').insert([newConv]);
+  if (error) throw error;
 
   // Add initial message
   await sendChatMessage(

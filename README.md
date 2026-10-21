@@ -1,4 +1,34 @@
-# React + TypeScript + Vite
+# AgriFlow
+
+AgriFlow is a React/Vite agricultural marketplace. Marketplace, supplier, order, RFQ, demand, chat, notification, and dispute records are database-backed through Supabase. The client does not seed or persist business records in browser storage.
+
+## Live data setup
+
+1. Copy `.env.example` to `.env.local`.
+2. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` using the public anon key only.
+3. Run the SQL schema exported as `SUPABASE_SQL_SCHEMA` in `src/lib/supabase.ts` in the Supabase SQL editor.
+4. Configure Row Level Security for the authenticated roles before enabling writes in production.
+5. Run `npm run build` and deploy with the same public environment variables.
+
+Without Supabase configuration, the app intentionally shows an unavailable live-data state. It does not display seed buyers, farms, products, orders, reviews, or discovery results.
+
+Email delivery, scheduled Demand Radar discovery, authentication, storage uploads, and service-role operations must run in a server-side or Supabase Edge Function adapter. Never expose those credentials through `VITE_*` variables.
+
+## Current implementation boundary
+
+The repository layer reads real Supabase rows and fails closed when the database is unavailable. WhatsApp remains user-initiated click-to-chat, SMS remains an explicitly labelled simulator, and no external buyer discovery is claimed until a permitted server-side source is configured. Authentication, field-level RLS policies, scheduled workers, and provider adapters still require deployment configuration and security review.
+
+## Development
+
+```bash
+npm install
+npm run dev
+npm run build
+```
+
+---
+
+The remainder of this file is the original Vite template reference.
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 

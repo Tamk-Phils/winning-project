@@ -10,6 +10,7 @@ import {
   Check, 
   Calculator
 } from 'lucide-react';
+import { DataUnavailableState } from './DataUnavailableState';
 
 interface WholesaleHubViewProps {
   products: Product[];
@@ -22,6 +23,10 @@ export const WholesaleHubView: React.FC<WholesaleHubViewProps> = ({
   onOpenRFQ,
   onAddToCart,
 }) => {
+  if (products.length === 0) {
+    return <DataUnavailableState title="Wholesale pricing is not configured" message="Add live product listings to Supabase before showing commercial pricing or farmer revenue calculations." />;
+  }
+
   const [calcQuantity, setCalcQuantity] = useState<number>(100);
   const [selectedProductId, setSelectedProductId] = useState<string>(products[0]?.id || '');
   const [contractSuccess, setContractSuccess] = useState<boolean>(false);

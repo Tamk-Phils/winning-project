@@ -18,6 +18,7 @@ interface VoiceAssistantModalProps {
   onAddProduceVoice?: (produceName: string, quantity: number, priceXaf: number) => void;
   products: Product[];
   opportunities: DemandOpportunity[];
+  unreadNotificationCount: number;
 }
 
 export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
@@ -27,6 +28,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
   onAddProduceVoice,
   products: _products,
   opportunities,
+  unreadNotificationCount,
 }) => {
   const [language, setLanguage] = useState<VoiceLanguage>('pcm'); // Default to Cameroonian Pidgin for local accessibility
   const [isListening, setIsListening] = useState<boolean>(false);
@@ -135,8 +137,8 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
     // 1. Search Buyer Requests / Demand Radar
     if (text.includes('buyer') || text.includes('demand') || text.includes('find market') || text.includes('order')) {
       const resp = language === 'pcm'
-        ? `I don check Demand Radar. We get ${opportunities.length} verified buyer request right now! For example, BioFresh Paris dey find 2,500kg Penja White Pepper, and CEMAC Food Reserve dey find 18 Metric Tons of plantain. You wan go see dem?`
-        : `I checked the Demand Radar. There are currently ${opportunities.length} active verified buyer requests. For instance, BioFresh Paris requires 2,500kg Penja Pepper, and CEMAC Reserve needs 18 MT Plantains. Would you like me to open the Demand Radar?`;
+        ? `I don check Demand Radar. We get ${opportunities.length} verified buyer request from connected records right now. You wan go see dem?`
+        : `I checked the Demand Radar. There are currently ${opportunities.length} verified buyer requests from connected records. Would you like me to open the Demand Radar?`;
       
       setAssistantResponse(resp);
       speakText(resp);
@@ -178,8 +180,8 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
     // 3. Live Chat / Messages
     if (text.includes('message') || text.includes('chat') || text.includes('inbox') || text.includes('talk')) {
       const resp = language === 'pcm'
-        ? "You get 1 new unread message from BioFresh Europe regarding lab certificate for Penja Pepper. You wan open Live Chat now?"
-        : "You have 1 unread message from BioFresh Europe regarding laboratory certificates for Penja Pepper. Would you like to open the live chat?";
+        ? `You get ${unreadNotificationCount} unread notification${unreadNotificationCount === 1 ? '' : 's'} from connected records. You wan open Live Chat now?`
+        : `You have ${unreadNotificationCount} unread notification${unreadNotificationCount === 1 ? '' : 's'} from connected records. Would you like to open the live chat?`;
 
       setAssistantResponse(resp);
       speakText(resp);

@@ -4,58 +4,36 @@ import type {
   DemandOpportunity, 
   OpportunityMatch, 
   MatchFactor,
-  ContactPermissionStatus 
+  ContactPermissionStatus
 } from '../types';
-import { INITIAL_DEMAND_OPPORTUNITIES } from '../data/mockData';
 import { getSupabase } from './supabase';
 
-const STORAGE_KEY_DEMAND = 'agriflow_demand_opportunities_v1';
-const STORAGE_KEY_LAST_SCAN = 'agriflow_last_discovery_scan';
 
 // -------------------------------------------------------------
-// STORAGE & RETRIEVAL
+// STORAGE & RETRIEVAL (Zero Mock Fallbacks)
 // -------------------------------------------------------------
 
 export async function fetchDemandOpportunities(): Promise<DemandOpportunity[]> {
   const sb = getSupabase();
-  if (sb) {
-    try {
-      const { data, error } = await sb
-        .from('demand_opportunities')
-        .select('*')
-        .order('discoveryTimestamp', { ascending: false });
-      if (!error && data && data.length > 0) {
-        return data as DemandOpportunity[];
-      }
-    } catch (e) {
-      console.warn('Supabase fetchDemandOpportunities fallback to local', e);
-    }
-  }
-
+  if (!sb) return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_DEMAND);
-    if (!raw) return INITIAL_DEMAND_OPPORTUNITIES;
-    return JSON.parse(raw);
-  } catch {
-    return INITIAL_DEMAND_OPPORTUNITIES;
-  }
-}
-
-export function saveDemandOpportunities(opportunities: DemandOpportunity[]): void {
-  try {
-    localStorage.setItem(STORAGE_KEY_DEMAND, JSON.stringify(opportunities));
+    const { data, error } = await sb
+      .from('demand_opportunities')
+      .select('*')
+      .order('discoveryTimestamp', { ascending: false });
+    if (error) throw error;
+    return (data || []) as DemandOpportunity[];
   } catch (e) {
-    console.error('Failed to save demand opportunities to localStorage', e);
+    console.warn('Supabase fetchDemandOpportunities error', e);
+    return [];
   }
 }
 
 export function getLastScanTimestamp(): string {
-  return localStorage.getItem(STORAGE_KEY_LAST_SCAN) || '2026-10-21T08:00:00Z';
+  return 'Not configured';
 }
 
-export function setLastScanTimestamp(isoDate: string): void {
-  localStorage.setItem(STORAGE_KEY_LAST_SCAN, isoDate);
-}
+export function setLastScanTimestamp(_isoDate: string): void { /* Scheduled jobs persist this server-side. */ }
 
 // -------------------------------------------------------------
 // INTELLIGENT MATCHING ENGINE

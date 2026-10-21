@@ -1,91 +1,41 @@
-import type { 
-  AppNotification, 
-  EmailLog, 
-  SmsLog, 
-  DisputeReport 
-} from '../types';
-import { 
-  INITIAL_NOTIFICATIONS, 
-  INITIAL_EMAIL_LOGS, 
-  INITIAL_SMS_LOGS, 
-  INITIAL_DISPUTES 
-} from '../data/mockData';
+import type { AppNotification, EmailLog, SmsLog, DisputeReport } from '../types';
 import { getSupabase } from './supabase';
-
-const STORAGE_KEY_NOTIFICATIONS = 'agriflow_notifications_v1';
-const STORAGE_KEY_EMAIL_LOGS = 'agriflow_email_logs_v1';
-const STORAGE_KEY_SMS_LOGS = 'agriflow_sms_logs_v1';
-const STORAGE_KEY_DISPUTES = 'agriflow_disputes_v1';
-
-// -------------------------------------------------------------
-// IN-APP NOTIFICATIONS SERVICE
-// -------------------------------------------------------------
 
 export async function fetchNotifications(): Promise<AppNotification[]> {
   const sb = getSupabase();
-  if (sb) {
-    try {
-      const { data, error } = await sb
-        .from('notifications')
-        .select('*')
-        .order('timestamp', { ascending: false });
-      if (!error && data && data.length > 0) {
-        return data as AppNotification[];
-      }
-    } catch (e) {
-      console.warn('Supabase fetchNotifications fallback to local', e);
-    }
-  }
-
+  if (!sb) return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_NOTIFICATIONS);
-    if (!raw) return INITIAL_NOTIFICATIONS;
-    return JSON.parse(raw);
-  } catch {
-    return INITIAL_NOTIFICATIONS;
-  }
-}
-
-export function saveNotifications(notifications: AppNotification[]): void {
-  try {
-    localStorage.setItem(STORAGE_KEY_NOTIFICATIONS, JSON.stringify(notifications));
-  } catch (e) {
-    console.error('Failed to save notifications', e);
+    const { data, error } = await sb.from('notifications').select('*').order('timestamp', { ascending: false });
+    if (error) throw error;
+    return (data || []) as AppNotification[];
+  } catch (error) {
+    console.warn('Supabase fetchNotifications error', error);
+    return [];
   }
 }
 
 export async function addNotification(notification: AppNotification): Promise<void> {
-  const current = await fetchNotifications();
-  const updated = [notification, ...current];
-  saveNotifications(updated);
-
   const sb = getSupabase();
-  if (sb) {
-    try {
-      await sb.from('notifications').insert([notification]);
-    } catch (e) {
-      console.warn('Supabase insert notification error', e);
-    }
-  }
+  if (!sb) throw new Error('Notifications require a configured Supabase project.');
+  const { error } = await sb.from('notifications').insert([notification]);
+  if (error) throw error;
 }
 
 export async function markNotificationAsRead(id: string): Promise<AppNotification[]> {
-  const current = await fetchNotifications();
-  const updated = current.map(n => n.id === id ? { ...n, isRead: true } : n);
-  saveNotifications(updated);
-  return updated;
+  const sb = getSupabase();
+  if (!sb) return [];
+  const { error } = await sb.from('notifications').update({ isRead: true }).eq('id', id);
+  if (error) throw error;
+  return fetchNotifications();
 }
 
 export async function markAllNotificationsAsRead(): Promise<AppNotification[]> {
-  const current = await fetchNotifications();
-  const updated = current.map(n => ({ ...n, isRead: true }));
-  saveNotifications(updated);
-  return updated;
+  const sb = getSupabase();
+  if (!sb) return [];
+  const { error } = await sb.from('notifications').update({ isRead: true }).eq('isRead', false);
+  if (error) throw error;
+  return fetchNotifications();
 }
-
-// -------------------------------------------------------------
-// MODULAR EMAIL SERVICE (Development Preview & Safe Fallback)
-// -------------------------------------------------------------
 
 export interface EmailSendRequest {
   toEmail: string;
@@ -97,25 +47,24 @@ export interface EmailSendRequest {
 }
 
 export function isEmailConfigured(): boolean {
-  // Check if live SMTP or API keys exist in env
-  const apiKey = import.meta.env.VITE_RESEND_API_KEY || import.meta.env.VITE_SENDGRID_API_KEY;
-  const smtpHost = import.meta.env.VITE_SMTP_HOST;
-  return Boolean(apiKey || smtpHost);
+  return Boolean(import.meta.env.VITE_RESEND_API_KEY || import.meta.env.VITE_SENDGRID_API_KEY || import.meta.env.VITE_SMTP_HOST);
 }
 
 export async function fetchEmailLogs(): Promise<EmailLog[]> {
+  const sb = getSupabase();
+  if (!sb) return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_EMAIL_LOGS);
-    if (!raw) return INITIAL_EMAIL_LOGS;
-    return JSON.parse(raw);
-  } catch {
-    return INITIAL_EMAIL_LOGS;
+    const { data, error } = await sb.from('email_logs').select('*').order('timestamp', { ascending: false });
+    if (error) throw error;
+    return (data || []) as EmailLog[];
+  } catch (error) {
+    console.warn('Supabase fetchEmailLogs error', error);
+    return [];
   }
 }
 
 export async function sendEmail(req: EmailSendRequest): Promise<EmailLog> {
   const configured = isEmailConfigured();
-  
   const log: EmailLog = {
     id: `email-${Date.now()}`,
     toEmail: req.toEmail,
@@ -125,39 +74,32 @@ export async function sendEmail(req: EmailSendRequest): Promise<EmailLog> {
     bodyHtml: req.bodyHtml,
     bodyText: req.bodyText,
     timestamp: new Date().toISOString(),
-    status: configured ? 'sent' : 'simulated',
+    status: configured ? 'queued' : 'simulated',
     provider: configured ? 'resend_active' : 'smtp_mock',
-    errorMessage: configured 
-      ? undefined 
-      : 'Development Mode: No SMTP or API credentials configured in environment variables. Message safely logged in development preview.'
+    errorMessage: configured ? undefined : 'No email provider configured; this preview was not delivered.'
   };
-
-  const currentLogs = await fetchEmailLogs();
-  const updated = [log, ...currentLogs];
-  try {
-    localStorage.setItem(STORAGE_KEY_EMAIL_LOGS, JSON.stringify(updated));
-  } catch (e) {
-    console.error('Failed to save email log', e);
+  const sb = getSupabase();
+  if (sb) {
+    const { error } = await sb.from('email_logs').insert([log]);
+    if (error) throw error;
   }
-
   return log;
 }
 
-// -------------------------------------------------------------
-// SMS SERVICE (Future-Ready Simulator)
-// -------------------------------------------------------------
-
 export function isSmsConfigured(): boolean {
-  return false; // Free prototype does not require paid cellular subscriptions
+  return false;
 }
 
 export async function fetchSmsLogs(): Promise<SmsLog[]> {
+  const sb = getSupabase();
+  if (!sb) return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_SMS_LOGS);
-    if (!raw) return INITIAL_SMS_LOGS;
-    return JSON.parse(raw);
-  } catch {
-    return INITIAL_SMS_LOGS;
+    const { data, error } = await sb.from('sms_logs').select('*').order('timestamp', { ascending: false });
+    if (error) throw error;
+    return (data || []) as SmsLog[];
+  } catch (error) {
+    console.warn('Supabase fetchSmsLogs error', error);
+    return [];
   }
 }
 
@@ -169,50 +111,40 @@ export async function sendSimulatedSms(toPhone: string, messageText: string): Pr
     status: 'simulated_test',
     provider: 'simulator',
     timestamp: new Date().toISOString(),
-    note: 'TEST SIMULATION: Message not delivered to cellular carrier network. Live SMS requires a paid Twilio or Africa’s Talking subscription.'
+    note: 'TEST SIMULATION: Message was not delivered to a cellular network.'
   };
-
-  const currentLogs = await fetchSmsLogs();
-  const updated = [log, ...currentLogs];
-  try {
-    localStorage.setItem(STORAGE_KEY_SMS_LOGS, JSON.stringify(updated));
-  } catch (e) {
-    console.error('Failed to save SMS log', e);
+  const sb = getSupabase();
+  if (sb) {
+    const { error } = await sb.from('sms_logs').insert([log]);
+    if (error) throw error;
   }
-
   return log;
 }
 
-// -------------------------------------------------------------
-// TRUST, VERIFICATION & DISPUTE REPORTING
-// -------------------------------------------------------------
-
 export async function fetchDisputes(): Promise<DisputeReport[]> {
+  const sb = getSupabase();
+  if (!sb) return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_DISPUTES);
-    if (!raw) return INITIAL_DISPUTES;
-    return JSON.parse(raw);
-  } catch {
-    return INITIAL_DISPUTES;
+    const { data, error } = await sb.from('disputes').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data || []) as DisputeReport[];
+  } catch (error) {
+    console.warn('Supabase fetchDisputes error', error);
+    return [];
   }
 }
 
 export async function submitDispute(report: DisputeReport): Promise<void> {
-  const current = await fetchDisputes();
-  const updated = [report, ...current];
-  try {
-    localStorage.setItem(STORAGE_KEY_DISPUTES, JSON.stringify(updated));
-  } catch (e) {
-    console.error('Failed to save dispute report', e);
-  }
-
-  // Also alert notifications
+  const sb = getSupabase();
+  if (!sb) throw new Error('Dispute reporting requires a configured Supabase project.');
+  const { error } = await sb.from('disputes').insert([{ ...report, created_at: report.createdAt }]);
+  if (error) throw error;
   await addNotification({
     id: `notif-disp-${Date.now()}`,
     type: 'system_alert',
     title: `Dispute Submitted: ${report.reportedEntityName}`,
     message: `Your report regarding "${report.reason.replace(/_/g, ' ')}" has been assigned to AgriFlow Moderation.`,
-    timestamp: 'Just now',
+    timestamp: new Date().toISOString(),
     isRead: false,
     targetView: 'admin_dashboard'
   });

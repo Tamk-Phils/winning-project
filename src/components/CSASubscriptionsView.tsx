@@ -9,6 +9,7 @@ import {
   RefreshCw,
   ArrowRight
 } from 'lucide-react';
+import { DataUnavailableState } from './DataUnavailableState';
 
 interface CSASubscriptionsViewProps {
   onAddToCart: (product: Product, quantity: number, tier: 'retail' | 'wholesale') => void;
@@ -21,6 +22,10 @@ export const CSASubscriptionsView: React.FC<CSASubscriptionsViewProps> = ({
   onExploreMarket,
   products,
 }) => {
+  if (products.length === 0) {
+    return <DataUnavailableState title="CSA plans are not configured" message="CSA subscriptions will appear when live bundle listings and supplier records are available in Supabase." />;
+  }
+
   const [cadence, setCadence] = useState<'weekly' | 'biweekly' | 'monthly'>('weekly');
   const [addedPlanId, setAddedPlanId] = useState<string | null>(null);
 

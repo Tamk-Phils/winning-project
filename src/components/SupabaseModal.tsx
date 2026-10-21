@@ -124,7 +124,7 @@ export const SupabaseModal: React.FC<SupabaseModalProps> = ({
               boxShadow: config.isConnected ? '0 0 8px #10b981' : 'none'
             }} />
             <span style={{ fontSize: '0.88rem', fontWeight: 700, color: config.isConnected ? 'var(--primary-900)' : '#b45309' }}>
-              {config.isConnected ? 'Connected to live Supabase project' : 'Running in Offline / LocalStorage Mode with Instant Sync Ready'}
+              {config.isConnected ? 'Connected to live Supabase project' : 'Live data unavailable until Supabase is configured'}
             </span>
           </div>
 

@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import type { 
-  Farm, 
-  Product, 
-  CartItem, 
-  Order, 
-  BulkRFQ, 
+import type {
+  Farm,
+  Product,
+  CartItem,
+  Order,
+  BulkRFQ,
   ProductCategory,
   AppView,
   DemandOpportunity,
@@ -14,23 +14,26 @@ import type {
   DisputeReport,
   SupplierPrivacySettings
 } from './types';
-import { 
-  fetchFarms, 
-  fetchProducts, 
+import {
+  fetchFarms,
+  fetchProducts,
   fetchOrders,
-  saveProduct, 
-  saveOrder, 
-  submitBulkRFQ, 
+  deleteProduct,
+  updateFarm,
+  saveFarm,
+  saveProduct,
+  saveOrder,
+  submitBulkRFQ,
   getStoredSupabaseConfig
 } from './lib/supabase';
 import type { SupabaseConfig } from './lib/supabase';
 import { fetchDemandOpportunities } from './lib/demandRadar';
-import { 
-  fetchNotifications, 
-  markNotificationAsRead, 
-  markAllNotificationsAsRead, 
-  fetchEmailLogs, 
-  fetchSmsLogs, 
+import {
+  fetchNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+  fetchEmailLogs,
+  fetchSmsLogs,
   fetchDisputes,
   addNotification
 } from './lib/communicationServices';
@@ -95,6 +98,7 @@ export function App() {
   const [isRFQModalOpen, setIsRFQModalOpen] = useState<boolean>(false);
   const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState<boolean>(false);
   const [supabaseConfig, setSupabaseConfig] = useState<SupabaseConfig>(getStoredSupabaseConfig());
+  const [dataNotice, setDataNotice] = useState<string | null>(null);
 
   // Upgraded Feature Modals
   const [isNotificationsOpen, setIsNotificationsOpen] = useState<boolean>(false);
@@ -108,9 +112,22 @@ export function App() {
   // Load initial data
   useEffect(() => {
     async function loadData() {
+      if (!supabaseConfig.isConnected) {
+        setDataNotice('Live data is unavailable. Connect a Supabase project to load marketplace records.');
+        setFarms([]);
+        setProducts([]);
+        setOrders([]);
+        setDemandOpportunities([]);
+        setNotifications([]);
+        setEmailLogs([]);
+        setSmsLogs([]);
+        setDisputes([]);
+        return;
+      }
+
       const [
-        loadedFarms, 
-        loadedProducts, 
+        loadedFarms,
+        loadedProducts,
         loadedOrders,
         loadedOpps,
         loadedNotifs,
@@ -118,26 +135,19 @@ export function App() {
         loadedSms,
         loadedDisputes
       ] = await Promise.all([
-        fetchFarms(),
-        fetchProducts(),
-        fetchOrders(),
-        fetchDemandOpportunities(),
-        fetchNotifications(),
-        fetchEmailLogs(),
-        fetchSmsLogs(),
-        fetchDisputes()
+        fetchFarms(), fetchProducts(), fetchOrders(), fetchDemandOpportunities(),
+        fetchNotifications(), fetchEmailLogs(), fetchSmsLogs(), fetchDisputes()
       ]);
 
-      setFarms(loadedFarms);
-      setProducts(loadedProducts);
-      setOrders(loadedOrders);
-      setDemandOpportunities(loadedOpps);
-      setNotifications(loadedNotifs);
-      setEmailLogs(loadedEmails);
-      setSmsLogs(loadedSms);
-      setDisputes(loadedDisputes);
+      setFarms(loadedFarms); setProducts(loadedProducts); setOrders(loadedOrders);
+      setDemandOpportunities(loadedOpps); setNotifications(loadedNotifs);
+      setEmailLogs(loadedEmails); setSmsLogs(loadedSms); setDisputes(loadedDisputes);
+      setDataNotice(null);
     }
-    loadData();
+    loadData().catch((error: unknown) => {
+      console.error('Live data load failed:', error);
+      setDataNotice('Live data could not be loaded. Check the Supabase URL, key, schema, and row-level policies.');
+    });
   }, [supabaseConfig.isConnected]);
 
   // Save cart to local storage
@@ -189,58 +199,86 @@ export function App() {
 
   // Farmer Portal: Add New Produce Batch
   const handleAddProduct = async (newProduct: Product) => {
-    setProducts((prev) => [newProduct, ...prev]);
-    await saveProduct(newProduct);
-    
+    const result = await saveProduct(newProduct);
+    if (!result.success) {
+      setDataNotice(result.error || 'The listing was not saved.');
+      return;
+    }
+    setProducts((prev) => [result.product, ...prev]);
+
     // Alert via in-app notification
-    await addNotification({
-      id: `notif-prod-${Date.now()}`,
-      type: 'order_update',
-      title: 'New Harvest Batch Listed',
-      message: `${newProduct.name} (${newProduct.stockQuantity} ${newProduct.stockUnit}) is now visible to regional & export buyers.`,
-      timestamp: 'Just now',
-      isRead: false,
-      targetView: 'marketplace'
-    });
+    try {
+      await addNotification({
+        id: `notif-prod-${Date.now()}`,
+        type: 'order_update',
+        title: 'New Harvest Batch Listed',
+        message: `${result.product.name} (${result.product.stockQuantity} ${result.product.stockUnit}) is now visible to regional & export buyers.`,
+        timestamp: new Date().toISOString(),
+        isRead: false,
+        targetView: 'marketplace'
+      });
+    } catch (error) { console.warn('Listing notification was not saved:', error); }
   };
 
-  const handleDeleteProduct = (productId: string) => {
+  const handleDeleteProduct = async (productId: string) => {
+    const result = await deleteProduct(productId);
+    if (!result.success) {
+      setDataNotice(result.error || 'The product was not deleted.');
+      return;
+    }
     setProducts((prev) => prev.filter(p => p.id !== productId));
   };
 
   // Farmer Onboarding: Add New Farm
-  const handleRegisterFarm = (newFarm: Farm) => {
-    setFarms((prev) => [newFarm, ...prev]);
+  const handleRegisterFarm = async (newFarm: Farm) => {
+    const result = await saveFarm(newFarm);
+    if (!result.success) {
+      setDataNotice(result.error || 'The supplier profile was not saved.');
+      return;
+    }
+    setFarms((prev) => [result.farm, ...prev]);
   };
 
   // Order Placement
   const handleOrderPlaced = async (order: Order) => {
-    setOrders((prev) => [order, ...prev]);
-    await saveOrder(order);
+    const result = await saveOrder(order);
+    if (!result.success) {
+      setDataNotice(result.error || 'The order was not saved.');
+      return;
+    }
+    setOrders((prev) => [result.order, ...prev]);
 
-    await addNotification({
-      id: `notif-ord-${Date.now()}`,
-      type: 'order_update',
-      title: `Order Placed #${order.id}`,
-      message: `Total: ${order.total} XAF. Cold-chain dispatch scheduled.`,
-      timestamp: 'Just now',
-      isRead: false,
-      targetView: 'orders'
-    });
+    try {
+      await addNotification({
+        id: `notif-ord-${Date.now()}`,
+        type: 'order_update',
+        title: `Order Placed #${result.order.id}`,
+        message: `Total: ${result.order.total} XAF. Cold-chain dispatch scheduled.`,
+        timestamp: new Date().toISOString(),
+        isRead: false,
+        targetView: 'orders'
+      });
+    } catch (error) { console.warn('Order notification was not saved:', error); }
   };
 
   // Wholesale RFQ
   const handleSubmitRFQ = async (rfq: BulkRFQ) => {
-    await submitBulkRFQ(rfq);
-    await addNotification({
-      id: `notif-rfq-${Date.now()}`,
-      type: 'match_alert',
-      title: 'Wholesale RFQ Submitted',
-      message: `RFQ for ${rfq.volumeNeeded} ${rfq.produceNeeded} forwarded to certified cooperatives.`,
-      timestamp: 'Just now',
-      isRead: false,
-      targetView: 'wholesale_hub'
-    });
+    const result = await submitBulkRFQ(rfq);
+    if (!result.success) {
+      setDataNotice(result.error || 'The RFQ was not saved.');
+      return;
+    }
+    try {
+      await addNotification({
+        id: `notif-rfq-${Date.now()}`,
+        type: 'match_alert',
+        title: 'Wholesale RFQ Submitted',
+        message: `RFQ for ${rfq.volumeNeeded} ${rfq.produceNeeded} forwarded to certified cooperatives.`,
+        timestamp: new Date().toISOString(),
+        isRead: false,
+        targetView: 'wholesale_hub'
+      });
+    } catch (error) { console.warn('RFQ notification was not saved:', error); }
   };
 
   // Notification actions
@@ -255,13 +293,15 @@ export function App() {
   };
 
   // Privacy Settings update
-  const handleUpdatePrivacy = (farmId: string, settings: SupplierPrivacySettings) => {
-    setFarms((prev) => prev.map(f => {
-      if (f.id === farmId) {
-        return { ...f, privacySettings: settings };
-      }
-      return f;
-    }));
+  const handleUpdatePrivacy = async (farmId: string, settings: SupplierPrivacySettings) => {
+    const farm = farms.find((item) => item.id === farmId);
+    if (!farm) return;
+    const result = await updateFarm({ ...farm, privacySettings: settings });
+    if (!result.success) {
+      setDataNotice(result.error || 'Privacy settings were not saved.');
+      return;
+    }
+    setFarms((prev) => prev.map(item => item.id === farmId ? result.farm : item));
   };
 
   // Open Live Chat from Demand Radar or other cards
@@ -285,17 +325,22 @@ export function App() {
 
   // Voice Assistant add produce helper
   const handleAddProduceVoice = (produceName: string, quantity: number, priceXaf: number) => {
+    if (!farms[0]) {
+      setDataNotice('Voice listing requires a saved supplier profile. Connect Supabase and register a farm first.');
+      return;
+    }
+    const farm = farms[0];
     const newProd: Product = {
       id: `prod-voice-${Date.now()}`,
       name: produceName,
       category: 'fruits',
       variety: 'Giant French Horn Export Grade',
-      farmId: 'farm-cm-1',
-      farmName: 'Coopérative Agro-Écologique de Penja (CAEP)',
-      farmLocation: 'Njombé-Penja, Littoral Region',
-      farmAvatar: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=120&q=80',
-      description: 'Voice-listed fresh harvest batch. Ready for cold-transit dispatch.',
-      imageUrl: 'https://images.unsplash.com/photo-1603833665858-e61d17a86224?auto=format&fit=crop&w=800&q=80',
+      farmId: farm.id,
+      farmName: farm.name,
+      farmLocation: `${farm.location}, ${farm.state}`,
+      farmAvatar: farm.avatar,
+      description: `Voice-listed fresh harvest batch from ${farm.name}.`,
+      imageUrl: farm.bannerImage,
       retailPrice: Number((priceXaf / 600).toFixed(2)),
       retailPriceXaf: priceXaf,
       retailUnit: 'kg',
@@ -339,7 +384,7 @@ export function App() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      
+
       {/* Global Navigation */}
       <Navbar
         activeView={activeView}
@@ -362,11 +407,17 @@ export function App() {
 
       {/* Main Content Area */}
       <main style={{ flex: 1 }}>
-        
+        {dataNotice && (
+          <div role="status" style={{ background: 'var(--amber-50)', color: 'var(--amber-600)', borderBottom: '1px solid var(--amber-100)', padding: '10px 20px', textAlign: 'center', fontSize: '0.85rem', fontWeight: 600 }}>
+            {dataNotice}
+          </div>
+        )}
+
         {/* Marketplace View */}
         {activeView === 'marketplace' && (
           <>
             <Hero
+              isLiveDataAvailable={supabaseConfig.isConnected && (products.length > 0 || farms.length > 0)}
               onExploreClick={() => {
                 const el = document.getElementById('catalog-anchor');
                 if (el) el.scrollIntoView({ behavior: 'smooth' });
@@ -505,6 +556,7 @@ export function App() {
         {/* Soil Health & Sustainability Impact Page */}
         {activeView === 'impact' && (
           <ImpactView
+            isLiveDataAvailable={supabaseConfig.isConnected && farms.length > 0 && products.length > 0}
             onExploreFarms={() => handleNavigateView('farms')}
             onExploreMarket={() => handleNavigateView('marketplace')}
           />
@@ -610,6 +662,7 @@ export function App() {
         onAddProduceVoice={handleAddProduceVoice}
         products={products}
         opportunities={demandOpportunities}
+        unreadNotificationCount={unreadNotificationCount}
       />
 
       {/* Dispute & Safety Reporting Modal */}

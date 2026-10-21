@@ -1,15 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Farm, Product, Order, BulkRFQ } from '../types';
-import { INITIAL_FARMS, INITIAL_PRODUCTS } from '../data/mockData';
-
-// Storage keys for custom Supabase config and local fallback
+// Storage keys for custom Supabase config and local persistence
 const STORAGE_KEY_URL = 'agriflow_supabase_url';
 const STORAGE_KEY_KEY = 'agriflow_supabase_key';
-const STORAGE_KEY_PRODUCTS = 'agriflow_products_v1';
-const STORAGE_KEY_FARMS = 'agriflow_farms_v1';
-const STORAGE_KEY_ORDERS = 'agriflow_orders_v1';
-const STORAGE_KEY_RFQS = 'agriflow_rfqs_v1';
 
 export interface SupabaseConfig {
   url: string;
@@ -70,155 +64,137 @@ export function getSupabase(): SupabaseClient | null {
 }
 
 // -------------------------------------------------------------
-// LOCAL REPOSITORY (Fallback & Persistence when Supabase is optional)
-// -------------------------------------------------------------
-
-function getLocalData<T>(key: string, defaultData: T): T {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return defaultData;
-    return JSON.parse(raw);
-  } catch {
-    return defaultData;
-  }
-}
-
-function setLocalData<T>(key: string, data: T): void {
-  try {
-    localStorage.setItem(key, JSON.stringify(data));
-  } catch (err) {
-    console.error('LocalStorage write error:', err);
-  }
-}
-
-// -------------------------------------------------------------
-// API REPOSITORIES (Combines Live Supabase + Graceful Offline/Mock)
+// API REPOSITORIES (Live Supabase with Zero Mock Data)
 // -------------------------------------------------------------
 
 export async function fetchFarms(): Promise<Farm[]> {
   const sb = getSupabase();
-  if (sb) {
-    try {
-      const { data, error } = await sb.from('farms').select('*');
-      if (!error && data && data.length > 0) {
-        return data as Farm[];
-      }
-    } catch (err) {
-      console.warn('Supabase fetchFarms error, falling back to local data', err);
-    }
+  if (!sb) return [];
+  try {
+    const { data, error } = await sb.from('farms').select('*');
+    if (error) throw error;
+    return (data || []) as Farm[];
+  } catch (err) {
+    console.warn('Supabase fetchFarms error:', err);
+    return [];
   }
-  return getLocalData<Farm[]>(STORAGE_KEY_FARMS, INITIAL_FARMS);
+}
+
+export async function saveFarm(farm: Farm): Promise<{ success: boolean; farm: Farm; error?: string }> {
+  const sb = getSupabase();
+  if (!sb) return { success: false, farm, error: 'Supabase is not configured.' };
+  try {
+    const { data, error } = await sb.from('farms').insert([farm]).select().single();
+    if (error || !data) return { success: false, farm, error: error?.message || 'Farm was not saved.' };
+    return { success: true, farm: data as Farm };
+  } catch (err) {
+    console.warn('Supabase saveFarm exception:', err);
+    return { success: false, farm, error: 'Farm could not be saved.' };
+  }
+}
+
+export async function updateFarm(farm: Farm): Promise<{ success: boolean; farm: Farm; error?: string }> {
+  const sb = getSupabase();
+  if (!sb) return { success: false, farm, error: 'Supabase is not configured.' };
+  try {
+    const { data, error } = await sb.from('farms').update(farm).eq('id', farm.id).select().single();
+    if (error || !data) return { success: false, farm, error: error?.message || 'Supplier profile was not updated.' };
+    return { success: true, farm: data as Farm };
+  } catch (error) {
+    console.warn('Supabase updateFarm error:', error);
+    return { success: false, farm, error: 'Supplier profile could not be updated.' };
+  }
 }
 
 export async function fetchProducts(): Promise<Product[]> {
   const sb = getSupabase();
-  if (sb) {
-    try {
-      const { data, error } = await sb.from('products').select('*');
-      if (!error && data && data.length > 0) {
-        return data as Product[];
-      }
-    } catch (err) {
-      console.warn('Supabase fetchProducts error, falling back to local data', err);
-    }
+  if (!sb) return [];
+  try {
+    const { data, error } = await sb.from('products').select('*');
+    if (error) throw error;
+    return (data || []) as Product[];
+  } catch (err) {
+    console.warn('Supabase fetchProducts error:', err);
+    return [];
   }
-  return getLocalData<Product[]>(STORAGE_KEY_PRODUCTS, INITIAL_PRODUCTS);
 }
 
 export async function saveProduct(product: Product): Promise<{ success: boolean; product: Product; error?: string }> {
   const sb = getSupabase();
-  if (sb) {
-    try {
-      const { data, error } = await sb.from('products').insert([product]).select().single();
-      if (!error && data) {
-        // Also update local cache
-        const local = getLocalData<Product[]>(STORAGE_KEY_PRODUCTS, INITIAL_PRODUCTS);
-        setLocalData(STORAGE_KEY_PRODUCTS, [data as Product, ...local]);
-        return { success: true, product: data as Product };
-      }
-      if (error) {
-        console.warn('Supabase insert failed, saving to local state:', error.message);
-      }
-    } catch (err: unknown) {
-      console.warn('Supabase saveProduct error:', err);
-    }
+  if (!sb) return { success: false, product, error: 'Supabase is not configured.' };
+  try {
+    const { data, error } = await sb.from('products').insert([product]).select().single();
+    if (error || !data) return { success: false, product, error: error?.message || 'Product was not saved.' };
+    return { success: true, product: data as Product };
+  } catch (err: unknown) {
+    console.warn('Supabase saveProduct error:', err);
+    return { success: false, product, error: 'Product could not be saved.' };
   }
+}
 
-  // Local fallback
-  const local = getLocalData<Product[]>(STORAGE_KEY_PRODUCTS, INITIAL_PRODUCTS);
-  const updated = [product, ...local];
-  setLocalData(STORAGE_KEY_PRODUCTS, updated);
-  return { success: true, product };
+export async function deleteProduct(productId: string): Promise<{ success: boolean; error?: string }> {
+  const sb = getSupabase();
+  if (!sb) return { success: false, error: 'Supabase is not configured.' };
+  try {
+    const { error } = await sb.from('products').delete().eq('id', productId);
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  } catch (error) {
+    console.warn('Supabase deleteProduct error:', error);
+    return { success: false, error: 'Product could not be deleted.' };
+  }
 }
 
 export async function saveOrder(order: Order): Promise<{ success: boolean; order: Order; error?: string }> {
   const sb = getSupabase();
-  if (sb) {
-    try {
-      const { data, error } = await sb.from('orders').insert([order]).select().single();
-      if (!error && data) {
-        const local = getLocalData<Order[]>(STORAGE_KEY_ORDERS, []);
-        setLocalData(STORAGE_KEY_ORDERS, [data as Order, ...local]);
-        return { success: true, order: data as Order };
-      }
-    } catch (err) {
-      console.warn('Supabase saveOrder error:', err);
-    }
+  if (!sb) return { success: false, order, error: 'Supabase is not configured.' };
+  try {
+    const { data, error } = await sb.from('orders').insert([order]).select().single();
+    if (error || !data) return { success: false, order, error: error?.message || 'Order was not saved.' };
+    return { success: true, order: data as Order };
+  } catch (err) {
+    console.warn('Supabase saveOrder error:', err);
+    return { success: false, order, error: 'Order could not be saved.' };
   }
-
-  const local = getLocalData<Order[]>(STORAGE_KEY_ORDERS, []);
-  setLocalData(STORAGE_KEY_ORDERS, [order, ...local]);
-  return { success: true, order };
 }
 
 export async function fetchOrders(): Promise<Order[]> {
   const sb = getSupabase();
-  if (sb) {
-    try {
-      const { data, error } = await sb.from('orders').select('*').order('createdAt', { ascending: false });
-      if (!error && data) {
-        return data as Order[];
-      }
-    } catch (err) {
-      console.warn('Supabase fetchOrders error:', err);
-    }
+  if (!sb) return [];
+  try {
+    const { data, error } = await sb.from('orders').select('*').order('createdAt', { ascending: false });
+    if (error) throw error;
+    return (data || []) as Order[];
+  } catch (err) {
+    console.warn('Supabase fetchOrders error:', err);
+    return [];
   }
-  return getLocalData<Order[]>(STORAGE_KEY_ORDERS, []);
 }
 
-export async function submitBulkRFQ(rfq: BulkRFQ): Promise<{ success: boolean; rfq: BulkRFQ }> {
+export async function submitBulkRFQ(rfq: BulkRFQ): Promise<{ success: boolean; rfq: BulkRFQ; error?: string }> {
   const sb = getSupabase();
-  if (sb) {
-    try {
-      const { data, error } = await sb.from('bulk_rfqs').insert([rfq]).select().single();
-      if (!error && data) {
-        const local = getLocalData<BulkRFQ[]>(STORAGE_KEY_RFQS, []);
-        setLocalData(STORAGE_KEY_RFQS, [data as BulkRFQ, ...local]);
-        return { success: true, rfq: data as BulkRFQ };
-      }
-    } catch (err) {
-      console.warn('Supabase submitBulkRFQ error:', err);
-    }
+  if (!sb) return { success: false, rfq, error: 'Supabase is not configured.' };
+  try {
+    const { data, error } = await sb.from('bulk_rfqs').insert([rfq]).select().single();
+    if (error || !data) return { success: false, rfq, error: error?.message || 'RFQ was not saved.' };
+    return { success: true, rfq: data as BulkRFQ };
+  } catch (err) {
+    console.warn('Supabase submitBulkRFQ error:', err);
+    return { success: false, rfq, error: 'RFQ could not be saved.' };
   }
-
-  const local = getLocalData<BulkRFQ[]>(STORAGE_KEY_RFQS, []);
-  setLocalData(STORAGE_KEY_RFQS, [rfq, ...local]);
-  return { success: true, rfq };
 }
 
 export async function fetchBulkRFQs(): Promise<BulkRFQ[]> {
   const sb = getSupabase();
-  if (sb) {
-    try {
-      const { data, error } = await sb.from('bulk_rfqs').select('*').order('createdAt', { ascending: false });
-      if (!error && data) {
-        return data as BulkRFQ[];
-      }
-    } catch (err) {
-      console.warn('Supabase fetchBulkRFQs error:', err);
-    }
+  if (!sb) return [];
+  try {
+    const { data, error } = await sb.from('bulk_rfqs').select('*').order('createdAt', { ascending: false });
+    if (error) throw error;
+    return (data || []) as BulkRFQ[];
+  } catch (err) {
+    console.warn('Supabase fetchBulkRFQs error:', err);
+    return [];
   }
-  return getLocalData<BulkRFQ[]>(STORAGE_KEY_RFQS, []);
 }
 
 // -------------------------------------------------------------
@@ -437,7 +413,32 @@ CREATE TABLE IF NOT EXISTS public.disputes (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 9. Enable Row Level Security (RLS) & Policies
+-- 9. Communication delivery audit logs
+CREATE TABLE IF NOT EXISTS public.email_logs (
+  id TEXT PRIMARY KEY,
+  toEmail TEXT NOT NULL,
+  recipientName TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  template TEXT NOT NULL,
+  bodyHtml TEXT NOT NULL,
+  bodyText TEXT NOT NULL,
+  status TEXT NOT NULL,
+  provider TEXT NOT NULL,
+  timestamp TIMESTAMPTZ DEFAULT NOW(),
+  errorMessage TEXT
+);
+
+CREATE TABLE IF NOT EXISTS public.sms_logs (
+  id TEXT PRIMARY KEY,
+  toPhone TEXT NOT NULL,
+  messageText TEXT NOT NULL,
+  status TEXT NOT NULL,
+  provider TEXT NOT NULL,
+  timestamp TIMESTAMPTZ DEFAULT NOW(),
+  note TEXT NOT NULL
+);
+
+-- 10. Enable Row Level Security (RLS) & Policies
 ALTER TABLE public.farms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.demand_opportunities ENABLE ROW LEVEL SECURITY;
@@ -447,22 +448,26 @@ ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.bulk_rfqs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.disputes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.email_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sms_logs ENABLE ROW LEVEL SECURITY;
 
--- Public Read Policies
+-- Public catalogue reads only. Private records require authenticated ownership policies.
 CREATE POLICY "Public read farms" ON public.farms FOR SELECT USING (true);
 CREATE POLICY "Public read products" ON public.products FOR SELECT USING (true);
 CREATE POLICY "Public read demand_opportunities" ON public.demand_opportunities FOR SELECT USING (true);
-CREATE POLICY "Public read conversations" ON public.conversations FOR SELECT USING (true);
-CREATE POLICY "Public read chat_messages" ON public.chat_messages FOR SELECT USING (true);
-CREATE POLICY "Public read notifications" ON public.notifications FOR SELECT USING (true);
-CREATE POLICY "Public read orders" ON public.orders FOR SELECT USING (true);
-CREATE POLICY "Public read bulk_rfqs" ON public.bulk_rfqs FOR SELECT USING (true);
+CREATE POLICY "Participants read conversations" ON public.conversations FOR SELECT USING (auth.uid()::text = buyerId OR auth.uid()::text = supplierId);
+CREATE POLICY "Participants read chat_messages" ON public.chat_messages FOR SELECT USING (EXISTS (SELECT 1 FROM public.conversations c WHERE c.id = conversationId AND (auth.uid()::text = c.buyerId OR auth.uid()::text = c.supplierId)));
+CREATE POLICY "Owners read notifications" ON public.notifications FOR SELECT USING (auth.uid()::text = userId);
+CREATE POLICY "Owners read orders" ON public.orders FOR SELECT USING (auth.uid()::text = customerEmail);
 
--- Authenticated / Permitted Insert Policies
-CREATE POLICY "Insert products" ON public.products FOR INSERT WITH CHECK (true);
-CREATE POLICY "Insert chat_messages" ON public.chat_messages FOR INSERT WITH CHECK (true);
-CREATE POLICY "Insert orders" ON public.orders FOR INSERT WITH CHECK (true);
+-- Inserts remain narrow; ownership and supplier approval must be added when Auth is enabled.
+CREATE POLICY "Insert products" ON public.products FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Insert chat_messages" ON public.chat_messages FOR INSERT TO authenticated WITH CHECK (EXISTS (SELECT 1 FROM public.conversations c WHERE c.id = conversationId AND (auth.uid()::text = c.buyerId OR auth.uid()::text = c.supplierId)));
+CREATE POLICY "Insert orders" ON public.orders FOR INSERT TO anon, authenticated WITH CHECK (true);
 CREATE POLICY "Insert bulk_rfqs" ON public.bulk_rfqs FOR INSERT WITH CHECK (true);
-CREATE POLICY "Insert disputes" ON public.disputes FOR INSERT WITH CHECK (true);
+CREATE POLICY "Insert disputes" ON public.disputes FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Insert notifications" ON public.notifications FOR INSERT TO authenticated WITH CHECK (auth.uid()::text = userId);
+CREATE POLICY "Insert email logs" ON public.email_logs FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Insert sms logs" ON public.sms_logs FOR INSERT TO authenticated WITH CHECK (true);
 `;
 

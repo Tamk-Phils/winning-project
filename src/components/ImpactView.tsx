@@ -7,16 +7,23 @@ import {
   Layers,
   ArrowRight
 } from 'lucide-react';
+import { DataUnavailableState } from './DataUnavailableState';
 
 interface ImpactViewProps {
   onExploreFarms: () => void;
   onExploreMarket: () => void;
+  isLiveDataAvailable: boolean;
 }
 
 export const ImpactView: React.FC<ImpactViewProps> = ({
   onExploreFarms,
   onExploreMarket,
+  isLiveDataAvailable,
 }) => {
+  if (!isLiveDataAvailable) {
+    return <DataUnavailableState title="Impact reporting is not connected" message="Impact metrics will appear after verified farm, order, and measurement records are available in Supabase." />;
+  }
+
   return (
     <div style={{ backgroundColor: 'var(--bg-page)', padding: '50px 0 90px' }}>
       <div className="container">

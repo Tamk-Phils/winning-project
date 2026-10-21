@@ -8,13 +8,20 @@ import {
   Search
 } from 'lucide-react';
 import type { LogisticsHub } from '../types';
+import { DataUnavailableState } from './DataUnavailableState';
 
 export const LogisticsNetworkView: React.FC = () => {
   const [zipInput, setZipInput] = useState<string>('97201');
   const [zipResult, setZipResult] = useState<string | null>(null);
 
-  // 4 Regional Agro-Hubs with live telemetry
-  const hubs: LogisticsHub[] = [
+  // Hub telemetry must come from a connected logistics table or provider.
+  const hubs: LogisticsHub[] = [];
+
+  if (hubs.length === 0) {
+    return <DataUnavailableState title="Cold-chain telemetry is not connected" message="No logistics hub records are available. Connect an authorized telemetry source before displaying temperatures, capacity, or fleet activity." />;
+  }
+
+  /* const hubs: LogisticsHub[] = [
     {
       id: 'hub-1',
       name: 'Cascadia Regional Agro-Cold Hub',
@@ -71,7 +78,7 @@ export const LogisticsNetworkView: React.FC = () => {
       fleetVehiclesActive: 12,
       coordinates: { lat: 38.0293, lng: -78.4767 }
     }
-  ];
+  ]; */
 
   const handleCheckCoverage = (e: React.FormEvent) => {
     e.preventDefault();

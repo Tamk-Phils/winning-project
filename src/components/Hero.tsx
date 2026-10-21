@@ -9,18 +9,25 @@ import {
   Package
 } from 'lucide-react';
 import type { ProductCategory } from '../types';
+import { DataUnavailableState } from './DataUnavailableState';
 
 interface HeroProps {
   onExploreClick: () => void;
   onPostRFQClick: () => void;
   onCategorySelect: (cat: ProductCategory) => void;
+  isLiveDataAvailable: boolean;
 }
 
 export const Hero: React.FC<HeroProps> = ({
   onExploreClick,
   onPostRFQClick,
   onCategorySelect,
+  isLiveDataAvailable,
 }) => {
+  if (!isLiveDataAvailable) {
+    return <DataUnavailableState title="Marketplace data is not connected" message="Connect Supabase and add approved supplier and product records before showing marketplace activity." />;
+  }
+
   return (
     <div style={{ position: 'relative', overflow: 'hidden', backgroundColor: 'var(--primary-950)', color: '#ffffff' }}>
       
