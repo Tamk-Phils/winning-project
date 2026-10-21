@@ -10,6 +10,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import type { VoiceLanguage, AppView, Product, DemandOpportunity } from '../types';
+import { askAgriFlowAssistant } from '../lib/aiAssistant';
 
 interface VoiceAssistantModalProps {
   isOpen: boolean;
@@ -39,6 +40,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
     description: string;
     action: () => void;
   } | null>(null);
+  const [isAssistantThinking, setIsAssistantThinking] = useState<boolean>(false);
 
   // Initial welcome greeting depending on language
   useEffect(() => {
@@ -131,7 +133,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
   };
 
   // Natural Language Understanding & Command Processing
-  const processVoiceCommand = (command: string) => {
+  const processVoiceCommand = async (command: string) => {
     const text = command.toLowerCase();
 
     // 1. Search Buyer Requests / Demand Radar
@@ -201,8 +203,26 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
       ? `I hear you say: "${command}". Wetin you wan do? You fit say "Find buyers", "Sell plantain", or "Open messages".`
       : `I understood: "${command}". Would you like to search buyers, list produce, or view your live messages?`;
 
-    setAssistantResponse(fallback);
-    speakText(fallback);
+    setIsAssistantThinking(true);
+    try {
+      const response = await askAgriFlowAssistant({
+        message: command,
+        language,
+        context: {
+          productCount: _products.length,
+          opportunityCount: opportunities.length,
+          unreadNotificationCount,
+        },
+      });
+      setAssistantResponse(response.message);
+      speakText(response.message);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'AI assistant is unavailable.';
+      setAssistantResponse(`${fallback} (${message})`);
+      speakText(fallback);
+    } finally {
+      setIsAssistantThinking(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -403,7 +423,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
             )}
           </div>
           <p style={{ margin: 0, fontWeight: 500 }}>
-            {assistantResponse}
+            {isAssistantThinking ? 'Connecting to the AgriFlow AI assistant...' : assistantResponse}
           </p>
         </div>
 

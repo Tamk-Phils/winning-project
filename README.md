@@ -14,6 +14,8 @@ Without Supabase configuration, the app intentionally shows an unavailable live-
 
 Email delivery, scheduled Demand Radar discovery, authentication, storage uploads, and service-role operations must run in a server-side or Supabase Edge Function adapter. Never expose those credentials through `VITE_*` variables.
 
+The interactive AI assistant uses the server-side Vercel function at `/api/ai/chat`. Configure `AI_PROVIDER` and one or more provider keys in Vercel Project Settings or a local server environment. `rotating` uses the configured Groq, OpenRouter, and DeepSeek providers in rotation, with Gemini as a fallback. Do not put these keys in browser code, `.env` files committed to Git, or `VITE_*` variables. Plain `npm run dev` serves the Vite frontend only; use `vercel dev` to run the API function locally.
+
 ## Current implementation boundary
 
 The repository layer reads real Supabase rows and fails closed when the database is unavailable. WhatsApp remains user-initiated click-to-chat, SMS remains an explicitly labelled simulator, and no external buyer discovery is claimed until a permitted server-side source is configured. Authentication, field-level RLS policies, scheduled workers, and provider adapters still require deployment configuration and security review.
