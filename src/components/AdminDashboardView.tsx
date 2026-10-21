@@ -30,6 +30,7 @@ interface AdminDashboardViewProps {
   emailLogs: EmailLog[];
   smsLogs: SmsLog[];
   supabaseConnected: boolean;
+  isAdmin: boolean;
   onResolveDispute?: (id: string) => void;
   onToggleOpportunityStatus?: (id: string) => void;
 }
@@ -42,27 +43,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   emailLogs,
   smsLogs,
   supabaseConnected,
+  isAdmin,
   onResolveDispute,
   onToggleOpportunityStatus,
 }) => {
-  // Passcode gate (agriflow-admin-2026)
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [passcode, setPasscode] = useState<string>('');
-  const [errorMsg, setErrorMsg] = useState<string>('');
-
   const [activeTab, setActiveTab] = useState<'observability' | 'opportunities' | 'suppliers' | 'disputes' | 'integrations'>('observability');
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (passcode.trim() === 'agriflow-admin-2026' || passcode.trim() === 'admin') {
-      setIsAuthenticated(true);
-      setErrorMsg('');
-    } else {
-      setErrorMsg('Invalid administrative PIN. Please try again.');
-    }
-  };
-
-  if (!isAuthenticated) {
+  if (!isAdmin) {
     return (
       <div className="container" style={{ padding: '80px 20px', maxWidth: '460px', margin: '0 auto' }}>
         <div className="glass-card" style={{
@@ -91,42 +78,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             AgriFlow Administration
           </h2>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '24px' }}>
-            Protected area for platform monitoring, crawler observability, supplier verification, and dispute resolution.
+            This area requires a Supabase account with the `admin` role in user metadata. Client-side passcodes are not accepted.
           </p>
 
-          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div style={{ textAlign: 'left' }}>
-              <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)', display: 'block', marginBottom: '6px' }}>
-                Admin Access Passcode:
-              </label>
-              <input
-                type="password"
-                placeholder="Enter admin PIN..."
-                value={passcode}
-                onChange={(e) => setPasscode(e.target.value)}
-                className="form-input"
-                style={{ width: '100%', fontSize: '0.95rem', padding: '10px 14px' }}
-                autoFocus
-              />
-              <span style={{ fontSize: '0.72rem', color: 'var(--text-faint)', marginTop: '4px', display: 'block' }}>
-                Default prototype PIN: <code>agriflow-admin-2026</code>
-              </span>
-            </div>
-
-            {errorMsg && (
-              <div style={{ color: '#dc2626', fontSize: '0.82rem', fontWeight: 600 }}>
-                {errorMsg}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              className="btn btn-primary"
-              style={{ padding: '12px', fontWeight: 700, fontSize: '0.9rem', width: '100%' }}
-            >
-              Authenticate & Open Dashboard
-            </button>
-          </form>
         </div>
       </div>
     );
@@ -170,7 +124,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         </div>
 
         <button
-          onClick={() => setIsAuthenticated(false)}
+          onClick={() => window.location.reload()}
           className="btn btn-secondary"
           style={{ fontSize: '0.8rem', padding: '6px 14px' }}
         >

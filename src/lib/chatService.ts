@@ -2,6 +2,21 @@ import { getSupabase } from './supabase';
 import { addNotification } from './communicationServices';
 import type { ChatMessage, Conversation } from '../types';
 
+export function subscribeToConversation(
+  conversationId: string,
+  onMessage: (message: ChatMessage) => void,
+  onConversation: (conversation: Partial<Conversation> & { id: string }) => void
+): () => void {
+  const sb = getSupabase();
+  if (!sb) return () => undefined;
+  const channel = sb
+    .channel(`conversation:${conversationId}`)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `conversationId=eq.${conversationId}` }, (payload) => onMessage(payload.new as ChatMessage))
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'conversations', filter: `id=eq.${conversationId}` }, (payload) => onConversation(payload.new as Partial<Conversation> & { id: string }))
+    .subscribe();
+  return () => { void sb.removeChannel(channel); };
+}
+
 export async function fetchConversations(): Promise<Conversation[]> {
   const sb = getSupabase();
   if (!sb) return [];
@@ -38,8 +53,6 @@ export async function sendChatMessage(
   attachmentType?: 'image' | 'document' | 'audio'
 ): Promise<ChatMessage> {
   const now = new Date();
-  const timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-
   const newMessage: ChatMessage = {
     id: `msg-${Date.now()}`,
     conversationId,
@@ -49,7 +62,7 @@ export async function sendChatMessage(
     messageText,
     attachmentUrl,
     attachmentType,
-    timestamp: `Today at ${timeString}`,
+    timestamp: now.toISOString(),
     read: true
   };
 
@@ -69,10 +82,11 @@ export async function sendChatMessage(
     const recipientName = senderRole === 'supplier' ? targetConv.buyerName : targetConv.supplierName;
     await addNotification({
       id: `notif-chat-${Date.now()}`,
+      userId: senderRole === 'supplier' ? targetConv.buyerId : targetConv.supplierId,
       type: 'chat_message',
       title: `New Message for ${recipientName}`,
       message: `${senderName}: ${messageText.length > 80 ? messageText.substring(0, 80) + '...' : messageText}`,
-      timestamp: 'Just now',
+      timestamp: new Date().toISOString(),
       isRead: false,
       targetView: 'live_chat',
       targetId: conversationId,
@@ -106,7 +120,7 @@ export async function createConversation(
     relatedProductId,
     subject,
     lastMessageText: firstMessageText,
-    lastMessageTimestamp: 'Just now',
+    lastMessageTimestamp: new Date().toISOString(),
     unreadCountSupplier: 1,
     unreadCountBuyer: 0,
     status: 'active'

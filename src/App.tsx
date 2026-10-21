@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import type { Session } from '@supabase/supabase-js';
 import type {
   Farm,
   Product,
@@ -25,6 +26,7 @@ import {
   saveOrder,
   submitBulkRFQ,
   getStoredSupabaseConfig
+  ,getSupabase
 } from './lib/supabase';
 import type { SupabaseConfig } from './lib/supabase';
 import { fetchDemandOpportunities } from './lib/demandRadar';
@@ -36,6 +38,7 @@ import {
   fetchSmsLogs,
   fetchDisputes,
   addNotification
+  ,subscribeToNotifications
 } from './lib/communicationServices';
 
 import { Navbar } from './components/Navbar';
@@ -62,6 +65,7 @@ import { DisputeModal } from './components/DisputeModal';
 import { SupplierPrivacyModal } from './components/SupplierPrivacyModal';
 import { Footer } from './components/Footer';
 import { Mic } from 'lucide-react';
+import { AuthModal } from './components/AuthModal';
 
 const CART_STORAGE_KEY = 'agriflow_cart_v1';
 
@@ -99,6 +103,8 @@ export function App() {
   const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState<boolean>(false);
   const [supabaseConfig, setSupabaseConfig] = useState<SupabaseConfig>(getStoredSupabaseConfig());
   const [dataNotice, setDataNotice] = useState<string | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   // Upgraded Feature Modals
   const [isNotificationsOpen, setIsNotificationsOpen] = useState<boolean>(false);
@@ -110,6 +116,24 @@ export function App() {
   const [activeChatId, setActiveChatId] = useState<string>('');
 
   // Load initial data
+  useEffect(() => {
+    const supabase = getSupabase();
+    if (!supabase) {
+      setSession(null);
+      return;
+    }
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => setSession(nextSession));
+    return () => listener.subscription.unsubscribe();
+  }, [supabaseConfig.isConnected]);
+
+  useEffect(() => {
+    if (!session?.user) return;
+    return subscribeToNotifications(session.user.id, (notification) => {
+      setNotifications((current) => current.some((item) => item.id === notification.id) ? current : [notification, ...current]);
+    });
+  }, [session?.user]);
+
   useEffect(() => {
     async function loadData() {
       if (!supabaseConfig.isConnected) {
@@ -306,7 +330,7 @@ export function App() {
 
   // Open Live Chat from Demand Radar or other cards
   const handleOpenLiveChat = (_buyerId: string, _buyerName: string, _subject: string, _oppId?: string) => {
-    setActiveChatId('conv-001'); // Navigate to active conversation
+    setActiveChatId('');
     setActiveView('live_chat');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -380,6 +404,15 @@ export function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleProtectedView = (view: AppView) => {
+    if (!session) {
+      setIsAuthOpen(true);
+      setDataNotice('Sign in to access supplier, chat, dispute, and administration features.');
+      return;
+    }
+    handleNavigateView(view);
+  };
+
   const unreadNotificationCount = notifications.filter(n => !n.isRead).length;
 
   return (
@@ -388,7 +421,7 @@ export function App() {
       {/* Global Navigation */}
       <Navbar
         activeView={activeView}
-        setActiveView={handleNavigateView}
+        setActiveView={(view) => view === 'farmer_portal' || view === 'live_chat' || view === 'admin_dashboard' ? handleProtectedView(view) : handleNavigateView(view)}
         cart={cart}
         setIsCartOpen={setIsCartOpen}
         selectedRegion={selectedRegion}
@@ -402,7 +435,7 @@ export function App() {
         onOpenNotifications={() => setIsNotificationsOpen(true)}
         onOpenVoiceAssistant={() => setIsVoiceAssistantOpen(true)}
         onOpenPrivacyModal={() => handleOpenPrivacyModal()}
-        chatUnreadCount={1}
+        chatUnreadCount={0}
       />
 
       {/* Main Content Area */}
@@ -471,6 +504,7 @@ export function App() {
           <LiveChatView
             initialConversationId={activeChatId}
             onOpenDisputeModal={handleOpenDispute}
+            currentUser={session?.user ? { id: session.user.id, name: session.user.email || 'AgriFlow user', role: 'supplier' } : null}
           />
         )}
 
@@ -484,6 +518,7 @@ export function App() {
             emailLogs={emailLogs}
             smsLogs={smsLogs}
             supabaseConnected={supabaseConfig.isConnected}
+            isAdmin={session?.user.app_metadata?.role === 'admin' || session?.user.user_metadata?.role === 'admin'}
             onResolveDispute={(id) => setDisputes(prev => prev.filter(d => d.id !== id))}
             onToggleOpportunityStatus={(id) => {
               setDemandOpportunities(prev => prev.map(o => {
@@ -548,7 +583,7 @@ export function App() {
         {activeView === 'onboarding' && (
           <FarmerOnboardingView
             onRegisterFarm={handleRegisterFarm}
-            onGoToFarmerPortal={() => handleNavigateView('farmer_portal')}
+            onGoToFarmerPortal={() => handleProtectedView('farmer_portal')}
           />
         )}
 
@@ -663,6 +698,8 @@ export function App() {
         opportunities={demandOpportunities}
         unreadNotificationCount={unreadNotificationCount}
       />
+
+      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} onAuthenticated={() => setIsAuthOpen(false)} />
 
       {/* Dispute & Safety Reporting Modal */}
       <DisputeModal

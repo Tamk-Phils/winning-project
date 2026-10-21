@@ -380,6 +380,7 @@ export type NotificationType =
 
 export interface AppNotification {
   id: string;
+  userId?: string;
   type: NotificationType;
   title: string;
   message: string;

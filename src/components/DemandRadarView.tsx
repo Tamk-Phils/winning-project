@@ -110,7 +110,7 @@ export const DemandRadarView: React.FC<DemandRadarViewProps> = ({
       setLastScanTimestamp(newTimestamp);
       setLastScanTime(newTimestamp);
       setIsScanning(false);
-      setScanMessage('Scan complete: 5 verified public buyer requests indexed with active traceable sources.');
+      setScanMessage('No live discovery worker is configured. Connect a permitted server-side source before scanning public buyer requests.');
       setTimeout(() => setScanMessage(null), 5000);
     }, 1800);
   };

@@ -35,7 +35,8 @@ export const WhatsAppMessageModal: React.FC<WhatsAppMessageModalProps> = ({
   const [copied, setCopied] = useState<boolean>(false);
 
   // Determine recipient phone number from opportunity
-  const recipientPhone = opportunity.buyerContactInfo || '+237677000000';
+  const recipientPhone = opportunity.buyerContactInfo || '';
+  const canOpenWhatsApp = Boolean(recipientPhone) && opportunity.contactPermissionStatus === 'direct_outreach_permitted';
 
   const handleCopy = () => {
     navigator.clipboard.writeText(messageText);
@@ -44,6 +45,7 @@ export const WhatsAppMessageModal: React.FC<WhatsAppMessageModalProps> = ({
   };
 
   const handleOpenWhatsApp = () => {
+    if (!canOpenWhatsApp) return;
     const url = formatWhatsAppUrl(recipientPhone, messageText);
     
     // Log in-app notification for the supplier's audit trail
@@ -152,7 +154,7 @@ export const WhatsAppMessageModal: React.FC<WhatsAppMessageModalProps> = ({
               padding: '2px 8px', 
               borderRadius: '4px' 
             }}>
-              Verified Contact: {recipientPhone}
+              {recipientPhone ? `Verified Contact: ${recipientPhone}` : 'No public contact supplied'}
             </span>
           </div>
           <div style={{ color: 'var(--text-muted)' }}>
@@ -226,6 +228,7 @@ export const WhatsAppMessageModal: React.FC<WhatsAppMessageModalProps> = ({
           <button
             type="button"
             onClick={handleOpenWhatsApp}
+            disabled={!canOpenWhatsApp}
             className="btn btn-primary"
             style={{ 
               backgroundColor: '#25D366', 
@@ -240,7 +243,7 @@ export const WhatsAppMessageModal: React.FC<WhatsAppMessageModalProps> = ({
             }}
           >
             <Send size={16} />
-            <span>Open WhatsApp & Send</span>
+            <span>{canOpenWhatsApp ? 'Open WhatsApp & Send' : 'WhatsApp unavailable'}</span>
           </button>
         </div>
 

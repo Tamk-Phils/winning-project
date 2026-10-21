@@ -11,16 +11,18 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import type { Conversation, ChatMessage } from '../types';
-import { fetchConversations, fetchChatMessages, sendChatMessage } from '../lib/chatService';
+import { fetchConversations, fetchChatMessages, sendChatMessage, subscribeToConversation } from '../lib/chatService';
 
 interface LiveChatViewProps {
   initialConversationId?: string;
   onOpenDisputeModal?: (reportedName: string) => void;
+  currentUser: { id: string; name: string; role: 'buyer' | 'supplier' } | null;
 }
 
 export const LiveChatView: React.FC<LiveChatViewProps> = ({
   initialConversationId,
-  onOpenDisputeModal
+  onOpenDisputeModal,
+  currentUser,
 }) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string>('');
@@ -58,6 +60,11 @@ export const LiveChatView: React.FC<LiveChatViewProps> = ({
       setMessages(msgs);
     }
     loadMsgs();
+    return subscribeToConversation(
+      activeConversationId,
+      (message) => setMessages((current) => current.some((item) => item.id === message.id) ? current : [...current, message]),
+      (conversation) => setConversations((current) => current.map((item) => item.id === conversation.id ? { ...item, ...conversation } : item))
+    );
   }, [activeConversationId]);
 
   // Scroll to bottom when messages update
@@ -66,6 +73,10 @@ export const LiveChatView: React.FC<LiveChatViewProps> = ({
   }, [messages]);
 
   const activeConversation = conversations.find(c => c.id === activeConversationId);
+
+  if (!currentUser) {
+    return <div className="container" style={{ padding: '72px 20px', textAlign: 'center' }}><h1>Sign in to use Live Chat</h1><p style={{ color: 'var(--text-muted)' }}>Private conversations are available only to authenticated participants.</p></div>;
+  }
 
   // Send message handler
   const handleSendMessage = async (e?: React.FormEvent) => {
@@ -77,9 +88,9 @@ export const LiveChatView: React.FC<LiveChatViewProps> = ({
 
     const newMsg = await sendChatMessage(
       activeConversationId,
-      'farm-cm-1',
-      'supplier',
-      'Emmanuel Ndedi (CAEP Penja)',
+      currentUser.id,
+      currentUser.role,
+      currentUser.name,
       textToSend
     );
 
@@ -113,9 +124,9 @@ export const LiveChatView: React.FC<LiveChatViewProps> = ({
 
     const newMsg = await sendChatMessage(
       activeConversationId,
-      'farm-cm-1',
-      'supplier',
-      'Emmanuel Ndedi (CAEP Penja)',
+      currentUser.id,
+      currentUser.role,
+      currentUser.name,
       text,
       attachmentUrl,
       type
@@ -131,9 +142,9 @@ export const LiveChatView: React.FC<LiveChatViewProps> = ({
       // Send simulated audio note
       const newMsg = await sendChatMessage(
         activeConversationId,
-        'farm-cm-1',
-        'supplier',
-        'Emmanuel Ndedi (CAEP Penja)',
+        currentUser.id,
+        currentUser.role,
+        currentUser.name,
         '🎙️ Voice Note (0:18) — "Greetings, confirming our batch packaging specifications for your Friday inspection."',
         undefined,
         'audio'

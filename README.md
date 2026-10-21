@@ -18,7 +18,7 @@ The interactive AI assistant uses the server-side Vercel function at `/api/ai/ch
 
 ## Current implementation boundary
 
-The repository layer reads real Supabase rows and fails closed when the database is unavailable. WhatsApp remains user-initiated click-to-chat, SMS remains an explicitly labelled simulator, and no external buyer discovery is claimed until a permitted server-side source is configured. Authentication, field-level RLS policies, scheduled workers, and provider adapters still require deployment configuration and security review.
+The repository layer reads real Supabase rows and fails closed when the database is unavailable. Supabase Auth now protects supplier, chat, dispute, and admin entry points; the admin role must be assigned in Supabase user metadata. Chat and notifications use Supabase Realtime after the schema migration enables the publication tables. WhatsApp remains user-initiated click-to-chat, SMS remains an explicitly labelled simulator, and no external buyer discovery is claimed until a permitted server-side source is configured. Field-level RLS ownership policies, scheduled workers, and provider adapters still require deployment configuration and security review.
 
 ## Development
 

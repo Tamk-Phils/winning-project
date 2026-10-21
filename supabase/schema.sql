@@ -263,3 +263,20 @@ create policy "Insert sms logs" on public.sms_logs for insert to authenticated w
 create policy "Participant read conversations" on public.conversations for select to authenticated using (auth.uid()::text = "buyerId" or auth.uid()::text = "supplierId");
 create policy "Participant read messages" on public.chat_messages for select to authenticated using (exists (select 1 from public.conversations c where c.id = "conversationId" and (auth.uid()::text = c."buyerId" or auth.uid()::text = c."supplierId")));
 create policy "Owner read notifications" on public.notifications for select to authenticated using (auth.uid()::text = "userId");
+
+-- Enable Supabase Realtime for authenticated chat and notification clients.
+do $$
+begin
+  alter publication supabase_realtime add table public.conversations;
+exception when duplicate_object then null;
+end $$;
+do $$
+begin
+  alter publication supabase_realtime add table public.chat_messages;
+exception when duplicate_object then null;
+end $$;
+do $$
+begin
+  alter publication supabase_realtime add table public.notifications;
+exception when duplicate_object then null;
+end $$;

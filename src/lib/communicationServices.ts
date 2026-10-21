@@ -1,6 +1,16 @@
 import type { AppNotification, EmailLog, SmsLog, DisputeReport } from '../types';
 import { getSupabase } from './supabase';
 
+export function subscribeToNotifications(userId: string, onNotification: (notification: AppNotification) => void): () => void {
+  const sb = getSupabase();
+  if (!sb) return () => undefined;
+  const channel = sb
+    .channel(`notifications:${userId}`)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `userId=eq.${userId}` }, (payload) => onNotification(payload.new as AppNotification))
+    .subscribe();
+  return () => { void sb.removeChannel(channel); };
+}
+
 export async function fetchNotifications(): Promise<AppNotification[]> {
   const sb = getSupabase();
   if (!sb) return [];
