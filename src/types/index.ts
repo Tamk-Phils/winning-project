@@ -21,6 +21,7 @@ export type FarmingPractice =
 
 export type AppView = 
   | 'marketplace'
+  | 'services'
   | 'farmer_portal'
   | 'farms'
   | 'csa_boxes'
@@ -32,6 +33,7 @@ export type AppView =
   | 'demand_radar'
   | 'live_chat'
   | 'admin_dashboard';
+
 
 export type GeographicRegion = 
   | 'Littoral & Coastal'
@@ -461,4 +463,98 @@ export interface SystemHealthStatus {
   emailSimulatorLogsCount: number;
   supabaseConnected: boolean;
   errorLogCount: number;
+}
+
+// -------------------------------------------------------------
+// AGRICULTURAL SERVICE HUB & SPECIALIST NETWORK TYPES
+// -------------------------------------------------------------
+
+export type ServiceCategory = 
+  | 'all'
+  | 'agronomy'
+  | 'machinery'
+  | 'drone_tech'
+  | 'cold_chain'
+  | 'harvest_labor'
+  | 'irrigation_solar'
+  | 'veterinary'
+  | 'soil_testing'
+  | 'certification';
+
+export interface ServiceOffering {
+  id: string;
+  title: string;
+  description: string;
+  priceXaf: number;
+  priceUsd: number;
+  unit: string; // e.g. 'per hectare', 'per hour', 'per day', 'per test', 'per transit trip'
+  estimatedDuration: string;
+  includesEquipment: boolean;
+}
+
+export interface ServiceProvider {
+  id: string;
+  userId?: string;
+  fullName: string;
+  businessName?: string;
+  title: string; // e.g. "Lead Agronomist & Soil Diagnostic Specialist"
+  category: ServiceCategory;
+  avatarUrl: string;
+  bannerUrl: string;
+  rating: number; // 0 - 5.0
+  reviewCount: number;
+  startingPriceXaf: number;
+  startingPriceUsd: number;
+  location: string;
+  region: string;
+  country: string;
+  bio: string;
+  experienceYears: number;
+  verified: boolean;
+  licensedProfessional: boolean;
+  insuranceCovered: boolean;
+  phone: string;
+  whatsappNumber: string;
+  email: string;
+  certifications: string[];
+  equipmentList: string[];
+  services: ServiceOffering[];
+  completedJobsCount: number;
+  responseTimeMinutes: number;
+  availableDays: string[]; // e.g. ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  featured?: boolean;
+}
+
+export type ServiceBookingStatus = 
+  | 'pending'
+  | 'confirmed'
+  | 'in_progress'
+  | 'completed'
+  | 'cancelled';
+
+export interface ServiceBooking {
+  id: string;
+  providerId: string;
+  providerName: string;
+  providerTitle: string;
+  providerAvatar: string;
+  providerPhone: string;
+  providerWhatsapp: string;
+  serviceId: string;
+  serviceTitle: string;
+  serviceUnit: string;
+  clientName: string;
+  clientPhone: string;
+  clientEmail: string;
+  clientFarmLocation: string;
+  bookingDate: string;
+  timeSlot: 'morning' | 'afternoon' | 'full_day';
+  scopeQuantity: number; // e.g. 3 (hectares, hours, or tests)
+  unitPriceXaf: number;
+  subtotalXaf: number;
+  platformEscrowFeeXaf: number;
+  totalPriceXaf: number;
+  specialInstructions?: string;
+  status: ServiceBookingStatus;
+  createdAt: string;
 }

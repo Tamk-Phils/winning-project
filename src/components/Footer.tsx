@@ -117,9 +117,21 @@ export const Footer: React.FC<FooterProps> = ({
                 </button>
               </li>
               <li>
+                <button onClick={() => onNavigate('services')} style={{ color: '#34d399', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+                  <span>Service Booking Hub (Specialists)</span>
+                  <ArrowUpRight size={13} color="#34d399" />
+                </button>
+              </li>
+              <li>
                 <button onClick={() => onNavigate('impact')} style={{ color: '#a7f3d0', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
                   <span>Soil Health & Impact Report</span>
                   <ArrowUpRight size={13} />
+                </button>
+              </li>
+              <li>
+                <button onClick={() => onNavigate('admin_dashboard')} style={{ color: '#fca5a5', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+                  <span>Security & Admin Dashboard</span>
+                  <ArrowUpRight size={13} color="#fca5a5" />
                 </button>
               </li>
               <li>

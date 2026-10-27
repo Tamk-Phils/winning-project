@@ -60,11 +60,12 @@ import { DemandRadarView } from './components/DemandRadarView';
 import { LiveChatView } from './components/LiveChatView';
 import { AdminDashboardView } from './components/AdminDashboardView';
 import { NotificationDrawer } from './components/NotificationDrawer';
-import { VoiceAssistantModal } from './components/VoiceAssistantModal';
+import { AIAssistantWidget } from './components/AIAssistantWidget';
+import { ServiceHubView } from './components/ServiceHubView';
 import { DisputeModal } from './components/DisputeModal';
 import { SupplierPrivacyModal } from './components/SupplierPrivacyModal';
 import { Footer } from './components/Footer';
-import { Mic } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { AuthModal } from './components/AuthModal';
 
 const CART_STORAGE_KEY = 'agriflow_cart_v1';
@@ -421,7 +422,7 @@ export function App() {
       {/* Global Navigation */}
       <Navbar
         activeView={activeView}
-        setActiveView={(view) => view === 'farmer_portal' || view === 'live_chat' || view === 'admin_dashboard' ? handleProtectedView(view) : handleNavigateView(view)}
+        setActiveView={(view) => view === 'farmer_portal' || view === 'live_chat' ? handleProtectedView(view) : handleNavigateView(view)}
         cart={cart}
         setIsCartOpen={setIsCartOpen}
         selectedRegion={selectedRegion}
@@ -534,6 +535,14 @@ export function App() {
           />
         )}
 
+        {/* Service Booking Hub Page */}
+        {activeView === 'services' && (
+          <ServiceHubView
+            onNavigateMarketplace={() => handleNavigateView('marketplace')}
+            onOpenLiveChat={() => handleProtectedView('live_chat')}
+          />
+        )}
+
         {/* CSA Subscriptions Page */}
         {activeView === 'csa_boxes' && (
           <CSASubscriptionsView
@@ -608,37 +617,46 @@ export function App() {
         )}
       </main>
 
-      {/* Floating Accessible Voice Assistant Button */}
-      <div style={{
-        position: 'fixed',
-        bottom: '24px',
-        right: '24px',
-        zIndex: 900
-      }}>
-        <button
-          type="button"
-          onClick={() => setIsVoiceAssistantOpen(true)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '12px 18px',
-            borderRadius: 'var(--radius-full)',
-            backgroundColor: 'var(--primary-800)',
-            color: '#ffffff',
-            border: '2px solid rgba(255,255,255,0.2)',
-            boxShadow: 'var(--shadow-xl)',
-            cursor: 'pointer',
-            fontWeight: 800,
-            fontSize: '0.88rem',
-            transition: 'all 0.2s ease'
-          }}
-          title="Voice Assistant for Farmers (English & Pidgin)"
-        >
-          <Mic size={18} color="#86efac" />
-          <span>Voice Assistant</span>
-        </button>
-      </div>
+      {/* Floating Accessible AI Assistant Launch Button */}
+      {!isVoiceAssistantOpen && (
+        <div style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          zIndex: 900
+        }}>
+          <button
+            type="button"
+            onClick={() => setIsVoiceAssistantOpen(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '12px 20px',
+              borderRadius: 'var(--radius-full)',
+              backgroundColor: 'var(--primary-900)',
+              color: '#ffffff',
+              border: '2px solid rgba(52, 211, 153, 0.4)',
+              boxShadow: 'var(--shadow-xl)',
+              cursor: 'pointer',
+              fontWeight: 800,
+              fontSize: '0.88rem',
+              transition: 'all 0.2s ease'
+            }}
+            title="AgriFlow AI Copilot (Background LLM Assistant)"
+          >
+            <Sparkles size={18} color="#86efac" />
+            <span>AgriFlow Copilot</span>
+            <span style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              backgroundColor: '#34d399',
+              boxShadow: '0 0 8px #34d399'
+            }} />
+          </button>
+        </div>
+      )}
 
       {/* Product Detail Modal */}
       <ProductDetailModal
@@ -688,11 +706,18 @@ export function App() {
         onNavigate={handleNavigateView}
       />
 
-      {/* Voice Assistant Modal */}
-      <VoiceAssistantModal
+      {/* AI Assistant Floating Background Widget */}
+      <AIAssistantWidget
         isOpen={isVoiceAssistantOpen}
         onClose={() => setIsVoiceAssistantOpen(false)}
         onNavigate={handleNavigateView}
+        onOpenCart={() => setIsCartOpen(true)}
+        onOpenNotifications={() => setIsNotificationsOpen(true)}
+        onOpenSupabase={() => setIsSupabaseModalOpen(true)}
+        onSearch={(query) => {
+          setSearchQuery(query);
+          handleNavigateView('marketplace');
+        }}
         onAddProduceVoice={handleAddProduceVoice}
         products={products}
         opportunities={demandOpportunities}

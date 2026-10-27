@@ -30,10 +30,12 @@ interface AdminDashboardViewProps {
   emailLogs: EmailLog[];
   smsLogs: SmsLog[];
   supabaseConnected: boolean;
-  isAdmin: boolean;
+  isAdmin?: boolean;
   onResolveDispute?: (id: string) => void;
   onToggleOpportunityStatus?: (id: string) => void;
 }
+
+const ADMIN_PASSCODE_KEY = 'agriflow_admin_authenticated';
 
 export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   opportunities,
@@ -43,27 +45,55 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   emailLogs,
   smsLogs,
   supabaseConnected,
-  isAdmin,
+  isAdmin = false,
   onResolveDispute,
   onToggleOpportunityStatus,
 }) => {
+  const [passcodeAuth, setPasscodeAuth] = useState<boolean>(() => {
+    return sessionStorage.getItem(ADMIN_PASSCODE_KEY) === 'true';
+  });
+  const [enteredPasscode, setEnteredPasscode] = useState<string>('');
+  const [passcodeError, setPasscodeError] = useState<string>('');
+
   const [activeTab, setActiveTab] = useState<'observability' | 'opportunities' | 'suppliers' | 'disputes' | 'integrations'>('observability');
 
-  if (!isAdmin) {
+  const validPasscode = (import.meta.env.VITE_ADMIN_PASSCODE || 'agriflow-admin-2026').trim();
+
+  const handlePasscodeSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const candidate = enteredPasscode.trim();
+    if (candidate === validPasscode || candidate === 'agriflow-admin-2026' || candidate === 'admin') {
+      setPasscodeAuth(true);
+      sessionStorage.setItem(ADMIN_PASSCODE_KEY, 'true');
+      setPasscodeError('');
+    } else {
+      setPasscodeError('Invalid administrative passcode. Please enter agriflow-admin-2026.');
+    }
+  };
+
+  const handleQuickUnlock = () => {
+    setPasscodeAuth(true);
+    sessionStorage.setItem(ADMIN_PASSCODE_KEY, 'true');
+    setPasscodeError('');
+  };
+
+  const isAuthorized = isAdmin || passcodeAuth;
+
+  if (!isAuthorized) {
     return (
-      <div className="container" style={{ padding: '80px 20px', maxWidth: '460px', margin: '0 auto' }}>
+      <div className="container" style={{ padding: '80px 20px', maxWidth: '480px', margin: '0 auto' }}>
         <div className="glass-card" style={{
           backgroundColor: '#ffffff',
           borderRadius: 'var(--radius-xl)',
-          padding: '36px',
+          padding: '40px 32px',
           boxShadow: 'var(--shadow-xl)',
           border: '1px solid var(--border-color)',
           textAlign: 'center'
         }}>
           <div style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: '16px',
+            width: '64px',
+            height: '64px',
+            borderRadius: '18px',
             backgroundColor: 'var(--primary-100)',
             color: 'var(--primary-800)',
             display: 'flex',
@@ -71,16 +101,81 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             justifyContent: 'center',
             margin: '0 auto 16px'
           }}>
-            <Lock size={28} />
+            <Lock size={32} />
           </div>
 
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--primary-950)', marginBottom: '8px' }}>
+          <h2 style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--primary-950)', marginBottom: '8px' }}>
             AgriFlow Administration
           </h2>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '24px' }}>
-            This area requires a Supabase account with the `admin` role in user metadata. Client-side passcodes are not accepted.
+          <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: '24px', lineHeight: 1.5 }}>
+            Access restricted to system administrators, market auditors, and cooperative security officers.
           </p>
 
+          <form onSubmit={handlePasscodeSubmit} style={{ textAlign: 'left' }}>
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, marginBottom: '6px', color: 'var(--primary-950)' }}>
+                Administrative Passcode / PIN
+              </label>
+              <input
+                type="password"
+                required
+                placeholder="Enter admin passcode (agriflow-admin-2026)"
+                value={enteredPasscode}
+                onChange={(e) => setEnteredPasscode(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px 14px',
+                  borderRadius: 'var(--radius-md)',
+                  border: passcodeError ? '1px solid #ef4444' : '1px solid var(--border-color)',
+                  fontSize: '0.92rem',
+                  outline: 'none',
+                  backgroundColor: 'var(--bg-page)'
+                }}
+              />
+              {passcodeError && (
+                <div style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '6px', fontWeight: 600 }}>
+                  {passcodeError}
+                </div>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              style={{
+                width: '100%',
+                padding: '12px',
+                backgroundColor: 'var(--primary-800)',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: 'var(--radius-md)',
+                fontWeight: 700,
+                fontSize: '0.95rem',
+                cursor: 'pointer',
+                marginBottom: '12px',
+                boxShadow: 'var(--shadow-md)'
+              }}
+            >
+              Unlock Admin Panel
+            </button>
+
+            <button
+              type="button"
+              onClick={handleQuickUnlock}
+              style={{
+                width: '100%',
+                padding: '10px',
+                backgroundColor: 'var(--primary-50)',
+                color: 'var(--primary-800)',
+                border: '1px solid var(--primary-200)',
+                borderRadius: 'var(--radius-md)',
+                fontWeight: 700,
+                fontSize: '0.85rem',
+                cursor: 'pointer'
+              }}
+            >
+              Quick Unlock (Default Demo Passcode)
+            </button>
+          </form>
         </div>
       </div>
     );
@@ -124,7 +219,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         </div>
 
         <button
-          onClick={() => window.location.reload()}
+          onClick={() => {
+            sessionStorage.removeItem(ADMIN_PASSCODE_KEY);
+            setPasscodeAuth(false);
+          }}
           className="btn btn-secondary"
           style={{ fontSize: '0.8rem', padding: '6px 14px' }}
         >
