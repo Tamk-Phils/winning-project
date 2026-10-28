@@ -250,7 +250,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
           maxWidth: '560px',
           backgroundColor: '#ffffff',
           borderRadius: 'var(--radius-xl)',
-          padding: '28px',
+          padding: 'clamp(18px, 4vw, 28px)',
           boxShadow: 'var(--shadow-xl)',
           border: '1px solid var(--border-color)',
           display: 'flex',

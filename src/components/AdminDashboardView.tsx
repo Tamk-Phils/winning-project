@@ -523,7 +523,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           </div>
 
           {/* Navigation Tabs */}
-          <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid #e2e8f0', marginTop: '24px' }}>
+          <div className="admin-tabs-scroll">
             <button
               type="button"
               onClick={() => setActiveTab('users')}
@@ -1254,7 +1254,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
         {/* 5. AUDIT & SAFETY LOGS */}
         {activeTab === 'observability' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+          <div className="responsive-two-col">
             <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', padding: '20px' }}>
               <h4 style={{ fontSize: '0.96rem', fontWeight: 800, color: '#0f172a', margin: '0 0 12px' }}>
                 Email Delivery Audit Logs ({emailLogs.length})
@@ -1328,7 +1328,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
                   User Role *
                 </label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div className="responsive-two-col">
                   <button
                     type="button"
                     onClick={() => setNewRole('supplier')}
@@ -1389,7 +1389,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="responsive-two-col">
                 <div>
                   <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
                     Phone Number *
@@ -1436,7 +1436,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </select>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="responsive-two-col">
                 <div>
                   <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
                     City / Town

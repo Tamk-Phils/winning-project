@@ -288,11 +288,7 @@ export const MarketplaceView: React.FC<MarketplaceViewProps> = ({
 
         {/* Product Cards Grid */}
         {sortedProducts.length > 0 ? (
-          <div className="product-grid" style={{
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-            gap: '24px' 
-          }}>
+          <div className="product-grid">
             {sortedProducts.map((product) => (
               <ProductCard
                 key={product.id}
@@ -371,7 +367,7 @@ export const MarketplaceView: React.FC<MarketplaceViewProps> = ({
               )}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: '20px' }}>
               {serviceProviders.slice(0, 4).map((sp) => (
                 <div
                   key={sp.id}

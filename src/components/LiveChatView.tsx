@@ -8,7 +8,8 @@ import {
   CheckCheck, 
   FileText, 
   Image as ImageIcon,
-  ShieldCheck
+  ShieldCheck,
+  ArrowLeft
 } from 'lucide-react';
 import type { Conversation, ChatMessage } from '../types';
 import { fetchConversations, fetchChatMessages, sendChatMessage, subscribeToConversation } from '../lib/chatService';
@@ -32,6 +33,7 @@ export const LiveChatView: React.FC<LiveChatViewProps> = ({
   const [isRecordingAudio, setIsRecordingAudio] = useState<boolean>(false);
   const [showAttachmentMenu, setShowAttachmentMenu] = useState<boolean>(false);
   const [safetyNoticeDismissed, setSafetyNoticeDismissed] = useState<boolean>(false);
+  const [mobileView, setMobileView] = useState<'list' | 'chat'>('list');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -46,6 +48,9 @@ export const LiveChatView: React.FC<LiveChatViewProps> = ({
           ? initialConversationId
           : convs[0].id;
         setActiveConversationId(targetId);
+        if (initialConversationId) {
+          setMobileView('chat');
+        }
       }
     }
     loadConvs();
@@ -195,26 +200,18 @@ export const LiveChatView: React.FC<LiveChatViewProps> = ({
       )}
 
       {/* Main Chat Workspace Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'minmax(280px, 340px) 1fr',
-        gap: '0',
-        backgroundColor: '#ffffff',
-        borderRadius: 'var(--radius-xl)',
-        boxShadow: 'var(--shadow-lg)',
-        border: '1px solid var(--border-color)',
-        minHeight: '680px',
-        maxHeight: 'calc(100vh - 180px)',
-        overflow: 'hidden'
-      }}>
+      <div className="chat-workspace-grid">
         
         {/* Left Pane: Conversation List */}
-        <div style={{
-          borderRight: '1px solid var(--border-color)',
-          display: 'flex',
-          flexDirection: 'column',
-          backgroundColor: 'var(--bg-subtle)'
-        }}>
+        <div 
+          className={`chat-left-pane ${mobileView === 'chat' ? 'mobile-hidden' : ''}`}
+          style={{
+            borderRight: '1px solid var(--border-color)',
+            display: 'flex',
+            flexDirection: 'column',
+            backgroundColor: 'var(--bg-subtle)'
+          }}
+        >
           {/* Header */}
           <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', backgroundColor: '#ffffff' }}>
             <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--primary-950)', margin: 0, marginBottom: '10px' }}>
@@ -252,7 +249,10 @@ export const LiveChatView: React.FC<LiveChatViewProps> = ({
                 return (
                   <div
                     key={conv.id}
-                    onClick={() => setActiveConversationId(conv.id)}
+                    onClick={() => {
+                      setActiveConversationId(conv.id);
+                      setMobileView('chat');
+                    }}
                     style={{
                       padding: '14px 18px',
                       borderBottom: '1px solid var(--border-subtle)',
@@ -302,26 +302,52 @@ export const LiveChatView: React.FC<LiveChatViewProps> = ({
 
         {/* Right Pane: Active Chat Room */}
         {activeConversation ? (
-          <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: '#ffffff' }}>
+          <div 
+            className={`chat-right-pane ${mobileView === 'list' ? 'mobile-hidden' : ''}`}
+            style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: '#ffffff' }}
+          >
             
             {/* Room Header */}
             <div style={{
-              padding: '16px 24px',
+              padding: '14px 20px',
               borderBottom: '1px solid var(--border-color)',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              backgroundColor: '#ffffff'
+              backgroundColor: '#ffffff',
+              gap: '10px'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                <button
+                  type="button"
+                  className="chat-back-mobile-btn"
+                  onClick={() => setMobileView('list')}
+                  style={{
+                    alignItems: 'center',
+                    gap: '4px',
+                    background: 'none',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '6px 10px',
+                    color: 'var(--primary-800)',
+                    fontWeight: 700,
+                    fontSize: '0.8rem',
+                    cursor: 'pointer',
+                    backgroundColor: 'var(--bg-subtle)'
+                  }}
+                  aria-label="Back to conversations list"
+                >
+                  <ArrowLeft size={15} />
+                  <span>Chats</span>
+                </button>
                 <img
                   src={activeConversation.buyerAvatar}
                   alt={activeConversation.buyerName}
-                  style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover' }}
+                  style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
                 />
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--primary-950)', margin: 0 }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <h3 style={{ fontSize: '0.98rem', fontWeight: 800, color: 'var(--primary-950)', margin: 0 }}>
                       {activeConversation.buyerName}
                     </h3>
                     <span style={{
@@ -636,7 +662,10 @@ export const LiveChatView: React.FC<LiveChatViewProps> = ({
 
           </div>
         ) : (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+          <div 
+            className={`chat-right-pane ${mobileView === 'list' ? 'mobile-hidden' : ''}`}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', padding: '32px', textAlign: 'center' }}
+          >
             Select a conversation on the left to start messaging.
           </div>
         )}

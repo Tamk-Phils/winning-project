@@ -59,7 +59,7 @@ export const OrderHistoryView: React.FC<OrderHistoryViewProps> = ({
         ) : (
           <>
             {/* Master-Detail Layout */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '28px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '28px' }}>
           
               {/* Left Column: Order List */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

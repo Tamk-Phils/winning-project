@@ -124,20 +124,9 @@ export const SupplierProfileView: React.FC<SupplierProfileViewProps> = ({
 
       {/* Main Profile Info Header */}
       <div className="container" style={{ marginTop: '-70px', position: 'relative', zIndex: 10 }}>
-        <div style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '16px',
-          border: '1px solid #e2e8f0',
-          padding: '28px 32px',
-          boxShadow: '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '24px',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between'
-        }}>
+        <div className="profile-header-card">
           
-          <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
+          <div className="profile-header-main">
             <img
               src={farm.avatar}
               alt={farm.ownerName}
@@ -147,7 +136,8 @@ export const SupplierProfileView: React.FC<SupplierProfileViewProps> = ({
                 borderRadius: '16px',
                 objectFit: 'cover',
                 border: '4px solid #ffffff',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                flexShrink: 0
               }}
             />
             <div>
@@ -205,7 +195,7 @@ export const SupplierProfileView: React.FC<SupplierProfileViewProps> = ({
           </div>
 
           {/* Quick Metrics & Direct Payout */}
-          <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+          <div className="profile-metrics-row">
             <div style={{
               backgroundColor: '#f8fafc',
               border: '1px solid #e2e8f0',
@@ -249,7 +239,7 @@ export const SupplierProfileView: React.FC<SupplierProfileViewProps> = ({
         </div>
 
         {/* Content Layout: Left Story & Practices, Right Products Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '28px', marginTop: '28px' }}>
+        <div className="supplier-layout-grid">
           
           {/* Left Column: Farm Story, Contacts, Practices */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -359,7 +349,9 @@ export const SupplierProfileView: React.FC<SupplierProfileViewProps> = ({
               backgroundColor: '#ffffff',
               padding: '14px 20px',
               borderRadius: '12px',
-              border: '1px solid #e2e8f0'
+              border: '1px solid #e2e8f0',
+              flexWrap: 'wrap',
+              gap: '12px'
             }}>
               <div>
                 <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
@@ -423,7 +415,7 @@ export const SupplierProfileView: React.FC<SupplierProfileViewProps> = ({
                 <p style={{ fontSize: '0.85rem' }}>This farm is currently preparing its next seasonal harvest cycle.</p>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '18px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))', gap: '18px' }}>
                 {supplierProducts.map((product) => {
                   const price = selectedTier === 'wholesale' 
                     ? (product.wholesalePriceXaf || product.wholesalePrice * 600)

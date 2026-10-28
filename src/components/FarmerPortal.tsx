@@ -339,10 +339,10 @@ export const FarmerPortal: React.FC<FarmerPortalProps> = ({
           backgroundColor: 'var(--primary-900)', 
           color: '#ffffff', 
           borderRadius: 'var(--radius-xl)', 
-          padding: '28px 32px',
+          padding: 'clamp(20px, 4vw, 32px)',
           marginBottom: '40px',
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))',
           gap: '24px',
           alignItems: 'center'
         }}>
@@ -536,7 +536,7 @@ export const FarmerPortal: React.FC<FarmerPortalProps> = ({
             <div 
               className="modal-content" 
               onClick={(e) => e.stopPropagation()} 
-              style={{ maxWidth: '780px', padding: '32px' }}
+              style={{ maxWidth: '780px', padding: 'clamp(20px, 4vw, 32px)' }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <div>
@@ -547,14 +547,14 @@ export const FarmerPortal: React.FC<FarmerPortalProps> = ({
                 </div>
                 <button 
                   onClick={() => setIsListingModalOpen(false)}
-                  style={{ fontSize: '1.2rem', color: 'var(--text-muted)', cursor: 'pointer' }}
+                  style={{ fontSize: '1.2rem', color: 'var(--text-muted)', cursor: 'pointer', background: 'none', border: 'none' }}
                 >
                   ✕
                 </button>
               </div>
 
               <form onSubmit={handleSubmitNewBatch}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '20px' }}>
+                <div className="responsive-two-col" style={{ marginBottom: '20px' }}>
                   
                   {/* Produce Name */}
                   <div>

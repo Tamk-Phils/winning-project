@@ -70,7 +70,7 @@ export const WholesaleRFQModal: React.FC<WholesaleRFQModalProps> = ({
       <div 
         className="modal-content" 
         onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: '680px', padding: '32px' }}
+        style={{ maxWidth: '680px', width: '100%', padding: '24px 20px' }}
       >
         <button
           onClick={onClose}
@@ -147,7 +147,7 @@ export const WholesaleRFQModal: React.FC<WholesaleRFQModalProps> = ({
             </p>
 
             <form onSubmit={handleSubmit}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+              <div className="responsive-two-col" style={{ marginBottom: '14px' }}>
                 <div>
                   <label className="form-label">Company / Entity *</label>
                   <input 
@@ -193,7 +193,7 @@ export const WholesaleRFQModal: React.FC<WholesaleRFQModalProps> = ({
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr 1fr', gap: '14px', marginBottom: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '14px', marginBottom: '14px' }}>
                 <div>
                   <label className="form-label">Category *</label>
                   <select 
@@ -235,7 +235,7 @@ export const WholesaleRFQModal: React.FC<WholesaleRFQModalProps> = ({
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+              <div className="responsive-two-col" style={{ marginBottom: '14px' }}>
                 <div>
                   <label className="form-label">Frequency / Cadence *</label>
                   <select 

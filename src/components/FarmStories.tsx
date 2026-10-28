@@ -52,7 +52,7 @@ export const FarmStories: React.FC<FarmStoriesProps> = ({
         {/* Farm Cards Grid */}
         <div style={{ 
           display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', 
           gap: '24px' 
         }}>
           {farms.map((farm) => {

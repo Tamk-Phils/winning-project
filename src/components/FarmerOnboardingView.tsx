@@ -281,7 +281,7 @@ export const FarmerOnboardingView: React.FC<FarmerOnboardingViewProps> = ({
                       Tell us about your agricultural property and grower ownership.
                     </p>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                    <div className="responsive-two-col" style={{ marginBottom: '16px' }}>
                       <div>
                         <label className="form-label">Farm / Ranch Name *</label>
                         <input 

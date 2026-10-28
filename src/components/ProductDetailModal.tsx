@@ -49,38 +49,49 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
       <div 
         className="modal-content" 
         onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: '840px', padding: 0, overflow: 'hidden' }}
+        style={{ 
+          maxWidth: '860px', 
+          width: '100%', 
+          maxHeight: '92vh', 
+          overflowY: 'auto', 
+          overflowX: 'hidden',
+          WebkitOverflowScrolling: 'touch',
+          padding: 0,
+          position: 'relative' 
+        }}
       >
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          style={{
-            position: 'absolute',
-            top: '16px',
-            right: '16px',
-            zIndex: 10,
-            width: '36px',
-            height: '36px',
-            borderRadius: '50%',
-            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: 'var(--shadow-md)',
-            color: 'var(--text-main)'
-          }}
-          aria-label="Close Modal"
-        >
-          <X size={20} />
-        </button>
+        {/* Sticky Header Close Button (always visible while scrolling) */}
+        <div style={{ position: 'sticky', top: 0, zIndex: 50, display: 'flex', justifyContent: 'flex-end', pointerEvents: 'none', padding: '12px 14px 0 0', height: 0 }}>
+          <button
+            onClick={onClose}
+            style={{
+              pointerEvents: 'auto',
+              width: '38px',
+              height: '38px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              backdropFilter: 'blur(8px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.16)',
+              border: '1px solid #e2e8f0',
+              color: 'var(--text-main)',
+              cursor: 'pointer',
+              transition: 'transform 0.15s ease'
+            }}
+            aria-label="Close Modal"
+          >
+            <X size={20} />
+          </button>
+        </div>
 
         {/* Modal Layout Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}>
+        <div className="product-modal-grid">
           
           {/* Left Column: Image & Batch Passport */}
           <div style={{ backgroundColor: 'var(--bg-subtle)', position: 'relative' }}>
-            <div style={{ height: '340px', width: '100%', overflow: 'hidden' }}>
+            <div className="product-modal-image-col" style={{ height: '340px', width: '100%', overflow: 'hidden' }}>
               <img 
                 src={product.imageUrl} 
                 alt={product.name} 
@@ -89,7 +100,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             </div>
 
             {/* Farm Passport Card */}
-            <div style={{ padding: '24px 20px' }}>
+            <div style={{ padding: '20px 16px' }}>
               <div style={{ 
                 backgroundColor: '#ffffff', 
                 borderRadius: 'var(--radius-lg)', 
@@ -162,14 +173,14 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           </div>
 
           {/* Right Column: Details, Nutritional, Buying Actions */}
-          <div style={{ padding: '32px 28px', display: 'flex', flexDirection: 'column' }}>
+          <div className="product-modal-content-col" style={{ padding: '28px 24px', display: 'flex', flexDirection: 'column' }}>
             
             <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
               <span className="badge badge-farm">{product.category.toUpperCase()}</span>
               <span className="badge badge-fresh">{product.grade}</span>
             </div>
 
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '6px', color: 'var(--text-main)' }}>
+            <h2 style={{ fontSize: '1.45rem', fontWeight: 800, marginBottom: '6px', color: 'var(--text-main)' }}>
               {product.name}
             </h2>
 
@@ -211,7 +222,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             {/* Dual Pricing Selector */}
             <div style={{ 
               display: 'grid', 
-              gridTemplateColumns: '1fr 1fr', 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', 
               gap: '12px', 
               marginBottom: '20px' 
             }}>
@@ -227,10 +238,13 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 }}
               >
                 <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Retail Tier</div>
-                <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--primary-900)' }}>
-                  ${product.retailPrice.toFixed(2)} <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>/ {product.retailUnit}</span>
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary-900)' }}>
+                  {(product.retailPriceXaf || product.retailPrice * 600).toLocaleString()} F
                 </div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Direct for homes & small prep</div>
+                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>
+                  ${product.retailPrice.toFixed(2)} / {product.retailUnit}
+                </div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>Direct for homes & small prep</div>
               </div>
 
               <div 
@@ -248,22 +262,25 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#047857', textTransform: 'uppercase' }}>Wholesale Bulk</span>
                   <span className="badge badge-amber" style={{ padding: '1px 6px', fontSize: '0.65rem' }}>Save {Math.round(((product.retailPrice - product.wholesalePrice) / product.retailPrice) * 100)}%</span>
                 </div>
-                <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#047857' }}>
-                  ${product.wholesalePrice.toFixed(2)} <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>/ {product.wholesaleUnit}</span>
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#047857' }}>
+                  {(product.wholesalePriceXaf || product.wholesalePrice * 600).toLocaleString()} F
                 </div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--amber-600)', fontWeight: 600 }}>Min {product.wholesaleMinOrder} {product.wholesaleUnit.split(' ')[0]}s</div>
+                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#047857' }}>
+                  ${product.wholesalePrice.toFixed(2)} / {product.wholesaleUnit}
+                </div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--amber-600)', fontWeight: 600, marginTop: '4px' }}>Min {product.wholesaleMinOrder} {product.wholesaleUnit.split(' ')[0]}s</div>
               </div>
             </div>
 
             {/* Quantity and Add to Cart Section */}
             <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid var(--border-color)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '14px', flexWrap: 'wrap' }}>
                 <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)' }}>Quantity:</span>
                 
                 <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid var(--border-color)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
                   <button 
                     onClick={() => setQty(Math.max(selectedTier === 'wholesale' ? product.wholesaleMinOrder : 1, qty - (selectedTier === 'wholesale' ? 5 : 1)))}
-                    style={{ padding: '8px 14px', backgroundColor: 'var(--bg-subtle)', fontWeight: 700 }}
+                    style={{ padding: '8px 14px', backgroundColor: 'var(--bg-subtle)', fontWeight: 700, border: 'none', cursor: 'pointer' }}
                   >
                     -
                   </button>
@@ -272,7 +289,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   </span>
                   <button 
                     onClick={() => setQty(qty + (selectedTier === 'wholesale' ? 5 : 1))}
-                    style={{ padding: '8px 14px', backgroundColor: 'var(--bg-subtle)', fontWeight: 700 }}
+                    style={{ padding: '8px 14px', backgroundColor: 'var(--bg-subtle)', fontWeight: 700, border: 'none', cursor: 'pointer' }}
                   >
                     +
                   </button>
@@ -281,17 +298,20 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Total Amount</div>
                   <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-heading)' }}>
-                    ${((selectedTier === 'retail' ? product.retailPrice : product.wholesalePrice) * qty).toFixed(2)}
+                    {((selectedTier === 'retail' ? (product.retailPriceXaf || product.retailPrice * 600) : (product.wholesalePriceXaf || product.wholesalePrice * 600)) * qty).toLocaleString()} FCFA
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                    (${((selectedTier === 'retail' ? product.retailPrice : product.wholesalePrice) * qty).toFixed(2)})
                   </div>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '10px' }}>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                 <button
                   onClick={handleAdd}
                   className={`btn ${added ? 'btn-secondary' : 'btn-primary'} btn-lg`}
                   style={{ 
-                    flex: 1,
+                    flex: '1 1 200px',
                     backgroundColor: added ? '#10b981' : undefined,
                     color: added ? '#ffffff' : undefined
                   }}
@@ -315,6 +335,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                     onOpenRFQ();
                   }}
                   className="btn btn-secondary btn-lg"
+                  style={{ flex: '1 1 140px' }}
                   title="Need tonnage or custom contract?"
                 >
                   <Building2 size={18} />

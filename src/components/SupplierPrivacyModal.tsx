@@ -269,7 +269,7 @@ export const SupplierPrivacyModal: React.FC<SupplierPrivacyModalProps> = ({
             <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '8px' }}>
               Preferred Incoming Channel:
             </label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+            <div className="responsive-two-col" style={{ gap: '10px' }}>
               {[
                 { id: 'whatsapp', label: 'WhatsApp Direct' },
                 { id: 'live_chat', label: 'AgriFlow In-App Live Chat' },

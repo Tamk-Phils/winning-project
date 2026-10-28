@@ -187,7 +187,7 @@ export const CSASubscriptionsView: React.FC<CSASubscriptionsViewProps> = ({
         {/* 3 Subscription Cards */}
         <div style={{ 
           display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', 
           gap: '28px',
           marginBottom: '64px'
         }}>
@@ -305,9 +305,9 @@ export const CSASubscriptionsView: React.FC<CSASubscriptionsViewProps> = ({
           backgroundColor: 'var(--primary-900)', 
           color: '#ffffff', 
           borderRadius: 'var(--radius-xl)', 
-          padding: '40px',
+          padding: 'clamp(20px, 4vw, 40px)',
           display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', 
           gap: '28px',
           border: '1px solid var(--primary-700)'
         }}>

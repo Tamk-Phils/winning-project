@@ -156,20 +156,9 @@ export const ServiceProviderProfileView: React.FC<ServiceProviderProfileViewProp
 
       {/* Main Profile Info Header */}
       <div className="container" style={{ marginTop: '-70px', position: 'relative', zIndex: 10 }}>
-        <div style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '16px',
-          border: '1px solid #e2e8f0',
-          padding: '28px 32px',
-          boxShadow: '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '24px',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between'
-        }}>
+        <div className="profile-header-card">
           
-          <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
+          <div className="profile-header-main">
             <img
               src={provider.avatarUrl}
               alt={provider.fullName}
@@ -179,7 +168,8 @@ export const ServiceProviderProfileView: React.FC<ServiceProviderProfileViewProp
                 borderRadius: '16px',
                 objectFit: 'cover',
                 border: '4px solid #ffffff',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                flexShrink: 0
               }}
             />
             <div>
@@ -236,7 +226,7 @@ export const ServiceProviderProfileView: React.FC<ServiceProviderProfileViewProp
           </div>
 
           {/* Quick Metrics */}
-          <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+          <div className="profile-metrics-row">
             <div style={{
               backgroundColor: '#f8fafc',
               border: '1px solid #e2e8f0',
@@ -278,7 +268,7 @@ export const ServiceProviderProfileView: React.FC<ServiceProviderProfileViewProp
         </div>
 
         {/* 2-Column Layout: Left Details, Right Booking Section */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '28px', marginTop: '28px' }}>
+        <div className="provider-layout-grid">
           
           {/* Left Column: Bio, Certifications, Equipment, Services List */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
@@ -294,7 +284,7 @@ export const ServiceProviderProfileView: React.FC<ServiceProviderProfileViewProp
             </div>
 
             {/* Certifications & Machinery Equipment */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div className="responsive-two-col">
               <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', padding: '20px' }}>
                 <h4 style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0f172a', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Award size={16} color="#15803d" />
@@ -491,7 +481,7 @@ export const ServiceProviderProfileView: React.FC<ServiceProviderProfileViewProp
                   </div>
 
                   {/* Date & Time Slot */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div className="responsive-two-col" style={{ gap: '10px' }}>
                     <div>
                       <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
                         Date

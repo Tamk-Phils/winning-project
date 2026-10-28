@@ -124,7 +124,7 @@ export const WholesaleHubView: React.FC<WholesaleHubViewProps> = ({
             Select any crop and your target commercial quantity to preview direct farm-gate discounts and net farmer revenue.
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '28px', alignItems: 'center' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '28px', alignItems: 'center' }}>
             
             {/* Input Controls */}
             <div>
@@ -358,10 +358,10 @@ export const WholesaleHubView: React.FC<WholesaleHubViewProps> = ({
         <div style={{ 
           backgroundColor: 'var(--bg-subtle)', 
           borderRadius: 'var(--radius-xl)', 
-          padding: '32px', 
+          padding: 'clamp(18px, 4vw, 32px)', 
           border: '1px solid var(--border-color)',
           display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', 
           gap: '24px' 
         }}>
           <div>
