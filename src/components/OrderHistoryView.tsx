@@ -106,10 +106,13 @@ export const OrderHistoryView: React.FC<OrderHistoryViewProps> = ({
 
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: '1px solid var(--border-color)', fontSize: '0.85rem' }}>
                         <span style={{ fontWeight: 800, color: 'var(--primary-900)' }}>
-                          ${ord.total.toFixed(2)}
+                          {(ord.currency === 'XAF' ? ord.total : Math.round(ord.total * 600)).toLocaleString()} FCFA
+                          <span style={{ fontSize: '0.72rem', fontWeight: 500, color: 'var(--text-muted)', marginLeft: '4px' }}>
+                            (${ord.total.toFixed(2)})
+                          </span>
                         </span>
                         <span style={{ fontSize: '0.75rem', color: '#047857', fontWeight: 700 }}>
-                          🌱 ${ord.farmerDirectPayout.toFixed(2)} to farmers
+                          🌱 {Math.round(ord.farmerDirectPayout * 600).toLocaleString()} FCFA to farmers
                         </span>
                       </div>
                     </div>
@@ -166,14 +169,16 @@ export const OrderHistoryView: React.FC<OrderHistoryViewProps> = ({
 
                   <div>
                     <div style={{ fontSize: '0.72rem', color: '#a7f3d0', textTransform: 'uppercase', fontWeight: 700 }}>GPS Telematics</div>
-                    <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#ffffff', marginTop: '4px' }}>Pacific Transit Corridor</div>
-                    <div style={{ fontSize: '0.72rem', color: '#fbbf24' }}>Speed: 42 mph • Driver: Marcus R.</div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#ffffff', marginTop: '4px' }}>Littoral - Douala Port Logistics Corridor</div>
+                    <div style={{ fontSize: '0.72rem', color: '#fbbf24' }}>Speed: 45 km/h • Driver: Jean-Baptiste K.</div>
                   </div>
 
                   <div>
                     <div style={{ fontSize: '0.72rem', color: '#a7f3d0', textTransform: 'uppercase', fontWeight: 700 }}>Direct Farmer Revenue</div>
-                    <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#34d399' }}>${activeOrder.farmerDirectPayout.toFixed(2)}</div>
-                    <div style={{ fontSize: '0.72rem', color: '#a7f3d0' }}>88.6% of produce total</div>
+                    <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#34d399' }}>
+                      {Math.round(activeOrder.farmerDirectPayout * 600).toLocaleString()} FCFA
+                    </div>
+                    <div style={{ fontSize: '0.72rem', color: '#a7f3d0' }}>≈ ${activeOrder.farmerDirectPayout.toFixed(2)} USD • 88.6% of produce total</div>
                   </div>
                 </div>
 

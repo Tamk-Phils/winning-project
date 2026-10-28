@@ -253,26 +253,31 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         }}>
           <div>
             {tier === 'retail' ? (
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                <span style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--primary-900)', fontFamily: 'var(--font-heading)' }}>
-                  ${product.retailPrice.toFixed(2)}
-                </span>
-                <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-                  / {product.retailUnit}
-                </span>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                  <span style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--primary-900)', fontFamily: 'var(--font-heading)' }}>
+                    {(product.retailPriceXaf || Math.round(product.retailPrice * 600)).toLocaleString()} FCFA
+                  </span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                    / {product.retailUnit}
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>
+                  ≈ ${product.retailPrice.toFixed(2)} USD
+                </div>
               </div>
             ) : (
               <div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                  <span style={{ fontSize: '1.45rem', fontWeight: 800, color: '#047857', fontFamily: 'var(--font-heading)' }}>
-                    ${product.wholesalePrice.toFixed(2)}
+                  <span style={{ fontSize: '1.35rem', fontWeight: 800, color: '#047857', fontFamily: 'var(--font-heading)' }}>
+                    {(product.wholesalePriceXaf || Math.round(product.wholesalePrice * 600)).toLocaleString()} FCFA
                   </span>
-                  <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500 }}>
                     / {product.wholesaleUnit}
                   </span>
                 </div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--amber-600)', fontWeight: 600 }}>
-                  MOQ: {product.wholesaleMinOrder} {product.wholesaleUnit.split(' ')[0]}s min
+                <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>
+                  ≈ ${product.wholesalePrice.toFixed(2)} USD • MOQ: {product.wholesaleMinOrder} {product.wholesaleUnit.split(' ')[0]}s
                 </div>
               </div>
             )}

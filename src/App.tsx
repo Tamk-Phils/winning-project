@@ -591,6 +591,8 @@ export function App() {
             opportunities={demandOpportunities}
             farms={farms}
             products={products}
+            orders={orders}
+            serviceProviders={serviceProviders}
             disputes={disputes}
             emailLogs={emailLogs}
             smsLogs={smsLogs}

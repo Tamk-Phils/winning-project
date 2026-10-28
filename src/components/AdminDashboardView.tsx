@@ -20,7 +20,9 @@ import type {
   ServiceBooking,
   PlatformUser,
   UserRole,
-  GeographicRegion
+  GeographicRegion,
+  LogisticsHub,
+  CSABoxPlan
 } from '../types';
 import {
   getStoredPlatformUsers,
@@ -34,7 +36,14 @@ import {
   getStoredServiceBookings,
   updateServiceBookingStatusInStore,
   saveFarmToStore,
-  saveServiceProviderToStore
+  saveServiceProviderToStore,
+  getStoredLogisticsHubs,
+  saveLogisticsHubToStore,
+  deleteLogisticsHubFromStore,
+  updateLogisticsTelemetryInStore,
+  getStoredCSAPlans,
+  saveCSAPlanToStore,
+  deleteCSAPlanFromStore
 } from '../lib/agriflowStore';
 
 interface AdminDashboardViewProps {
@@ -78,7 +87,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const [passcodeError, setPasscodeError] = useState<string>('');
 
   // Admin Navigation Tabs
-  const [activeTab, setActiveTab] = useState<'users' | 'catalogs' | 'transactions' | 'opportunities' | 'observability'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'catalogs' | 'transactions' | 'opportunities' | 'observability' | 'logistics' | 'csa'>('users');
 
   // Unified Store States
   const [users, setUsers] = useState<PlatformUser[]>(() => getStoredPlatformUsers());
@@ -86,6 +95,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const [serviceProviders, setServiceProviders] = useState<ServiceProvider[]>(() => getStoredServiceProviders());
   const [orders, setOrders] = useState<Order[]>(() => getStoredOrders());
   const [serviceBookings, setServiceBookings] = useState<ServiceBooking[]>(() => getStoredServiceBookings());
+  const [logisticsHubs, setLogisticsHubs] = useState<LogisticsHub[]>(() => getStoredLogisticsHubs());
+  const [csaPlans, setCsaPlans] = useState<CSABoxPlan[]>(() => getStoredCSAPlans());
 
   // Filter States
   const [userRoleFilter, setUserRoleFilter] = useState<'all' | 'supplier' | 'service_renderer'>('all');
@@ -105,6 +116,25 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const [newRegion, setNewRegion] = useState<GeographicRegion>('West Highlands (Foumbot/Bafoussam)');
   const [newSpecialtyRate, setNewSpecialtyRate] = useState<string>('');
 
+  // Add Hub Modal State
+  const [isAddHubModalOpen, setIsAddHubModalOpen] = useState<boolean>(false);
+  const [newHubName, setNewHubName] = useState<string>('');
+  const [newHubRegion, setNewHubRegion] = useState<string>('Littoral & Coastal');
+  const [newHubLocation, setNewHubLocation] = useState<string>('');
+  const [newHubCapacity, setNewHubCapacity] = useState<number>(250);
+  const [newHubRooms, setNewHubRooms] = useState<number>(6);
+  const [newHubTemp, setNewHubTemp] = useState<number>(2.4);
+
+  // Add CSA Plan Modal State
+  const [isAddCSAModalOpen, setIsAddCSAModalOpen] = useState<boolean>(false);
+  const [newCSAName, setNewCSAName] = useState<string>('');
+  const [newCSATagline, setNewCSATagline] = useState<string>('');
+  const [newCSAPriceXaf, setNewCSAPriceXaf] = useState<number>(24000);
+  const [newCSAWeight, setNewCSAWeight] = useState<number>(8);
+  const [newCSAServings, setNewCSAServings] = useState<string>('Family of 3–5');
+  const [newCSAItems, setNewCSAItems] = useState<string>('Sweet Plantains, Roma Tomatoes, Savoy Cabbage, Yellow Onions, Penja Pepper');
+  const [newCSAImage, setNewCSAImage] = useState<string>('https://images.unsplash.com/photo-1610348725531-843dff563e2c?auto=format&fit=crop&w=800&q=80');
+
   const [notificationBanner, setNotificationBanner] = useState<string | null>(null);
 
   const refreshData = () => {
@@ -113,11 +143,82 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     setServiceProviders(getStoredServiceProviders());
     setOrders(getStoredOrders());
     setServiceBookings(getStoredServiceBookings());
+    setLogisticsHubs(getStoredLogisticsHubs());
+    setCsaPlans(getStoredCSAPlans());
   };
 
   const showToast = (msg: string) => {
     setNotificationBanner(msg);
     setTimeout(() => setNotificationBanner(null), 4000);
+  };
+
+  const handleDeleteHub = (hubId: string, name: string) => {
+    if (confirm(`Delete logistics hub "${name}"?`)) {
+      deleteLogisticsHubFromStore(hubId);
+      refreshData();
+      showToast(`Logistics hub "${name}" deleted.`);
+    }
+  };
+
+  const handleUpdateHubTelemetry = (hubId: string, currentTemp: number, humidity: number, status: LogisticsHub['status']) => {
+    updateLogisticsTelemetryInStore(hubId, currentTemp, humidity, status);
+    refreshData();
+    showToast(`Sensor telemetry updated.`);
+  };
+
+  const handleAddHub = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newHubName.trim()) return;
+    const hub: LogisticsHub = {
+      id: `hub-${Date.now()}`,
+      name: newHubName,
+      region: newHubRegion,
+      location: newHubLocation,
+      capacityTons: Number(newHubCapacity),
+      activeColdRooms: Number(newHubRooms),
+      targetTempRange: '1.5°C – 4.0°C',
+      currentTemp: Number(newHubTemp),
+      humidity: 90,
+      status: 'optimal',
+      fleetVehiclesActive: 12,
+      coordinates: { lat: 4.05, lng: 9.7 }
+    };
+    saveLogisticsHubToStore(hub);
+    refreshData();
+    setIsAddHubModalOpen(false);
+    showToast(`Logistics hub "${hub.name}" created!`);
+  };
+
+  const handleDeleteCSAPlan = (planId: string, name: string) => {
+    if (confirm(`Delete CSA plan "${name}"?`)) {
+      deleteCSAPlanFromStore(planId);
+      refreshData();
+      showToast(`CSA plan "${name}" deleted.`);
+    }
+  };
+
+  const handleAddCSAPlan = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCSAName.trim()) return;
+    const plan: CSABoxPlan = {
+      id: `csa-${Date.now()}`,
+      name: newCSAName,
+      tagline: newCSATagline,
+      servings: newCSAServings,
+      weightKg: Number(newCSAWeight),
+      pricePerDelivery: Number((newCSAPriceXaf / 600).toFixed(2)),
+      pricePerDeliveryXaf: Number(newCSAPriceXaf),
+      cadence: 'weekly',
+      description: newCSATagline,
+      includedCategories: ['fruits', 'vegetables'],
+      sampleItems: newCSAItems.split(',').map(s => s.trim()).filter(Boolean),
+      imageUrl: newCSAImage,
+      popularityBadge: 'New Farm Share'
+    };
+    saveCSAPlanToStore(plan);
+    refreshData();
+    setIsAddCSAModalOpen(false);
+    showToast(`CSA plan "${plan.name}" created!`);
   };
 
   const validPasscode = (import.meta.env.VITE_ADMIN_PASSCODE || 'agriflow-admin-2026').trim();
@@ -607,6 +708,40 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               }}
             >
               Audit & Safety Logs
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('logistics')}
+              style={{
+                padding: '10px 16px',
+                border: 'none',
+                borderBottom: activeTab === 'logistics' ? '2px solid #0f172a' : '2px solid transparent',
+                backgroundColor: 'transparent',
+                fontWeight: activeTab === 'logistics' ? 800 : 600,
+                color: activeTab === 'logistics' ? '#0f172a' : '#64748b',
+                cursor: 'pointer',
+                fontSize: '0.88rem'
+              }}
+            >
+              Cold-Chain Logistics ({logisticsHubs.length} Hubs)
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('csa')}
+              style={{
+                padding: '10px 16px',
+                border: 'none',
+                borderBottom: activeTab === 'csa' ? '2px solid #0f172a' : '2px solid transparent',
+                backgroundColor: 'transparent',
+                fontWeight: activeTab === 'csa' ? 800 : 600,
+                color: activeTab === 'csa' ? '#0f172a' : '#64748b',
+                cursor: 'pointer',
+                fontSize: '0.88rem'
+              }}
+            >
+              CSA Farm Boxes ({csaPlans.length} Plans)
             </button>
           </div>
         </div>
@@ -1285,7 +1420,440 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           </div>
         )}
 
+        {/* 6. COLD-CHAIN LOGISTICS MANAGEMENT TAB */}
+        {activeTab === 'logistics' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', backgroundColor: '#ffffff', padding: '18px 24px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+              <div>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                  Cold-Chain Logistics Hubs & Telemetry
+                </h3>
+                <p style={{ margin: '2px 0 0', fontSize: '0.84rem', color: '#64748b' }}>
+                  Manage pre-cooling depots, live sensor temperature limits, and active refrigerated fleet dispatch.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsAddHubModalOpen(true)}
+                style={{
+                  backgroundColor: '#0f172a',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '9px 16px',
+                  borderRadius: '8px',
+                  fontSize: '0.84rem',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                + Add Logistics Depot
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+              {logisticsHubs.map((hub) => (
+                <div key={hub.id} style={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <span style={{ fontSize: '0.72rem', backgroundColor: '#f1f5f9', color: '#475569', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                        {hub.region}
+                      </span>
+                      <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: '6px 0 2px' }}>
+                        {hub.name}
+                      </h4>
+                      <div style={{ fontSize: '0.82rem', color: '#64748b' }}>{hub.location}</div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteHub(hub.id, hub.name)}
+                      style={{ border: 'none', background: 'transparent', color: '#ef4444', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 700 }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+
+                  <div style={{ backgroundColor: '#f8fafc', padding: '12px', borderRadius: '8px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div>
+                      <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>CURRENT TEMP</div>
+                      <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0284c7' }}>{hub.currentTemp}°C</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>HUMIDITY</div>
+                      <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#166534' }}>{hub.humidity}%</div>
+                    </div>
+                  </div>
+
+                  {/* Real-time Sensor Adjuster for Admin */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.78rem' }}>
+                    <span style={{ color: '#475569', fontWeight: 600 }}>Simulate Sensor:</span>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateHubTelemetry(hub.id, Number((hub.currentTemp - 0.2).toFixed(1)), hub.humidity, hub.status)}
+                        style={{ padding: '2px 8px', borderRadius: '4px', border: '1px solid #cbd5e1', backgroundColor: '#ffffff', cursor: 'pointer', fontWeight: 700 }}
+                      >
+                        -0.2°C
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateHubTelemetry(hub.id, Number((hub.currentTemp + 0.2).toFixed(1)), hub.humidity, hub.status)}
+                        style={{ padding: '2px 8px', borderRadius: '4px', border: '1px solid #cbd5e1', backgroundColor: '#ffffff', cursor: 'pointer', fontWeight: 700 }}
+                      >
+                        +0.2°C
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style={{ fontSize: '0.82rem', color: '#334155', display: 'flex', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid #f1f5f9' }}>
+                    <span>Capacity: <strong>{hub.capacityTons} Tons</strong></span>
+                    <span>Fleet: <strong>{hub.fleetVehiclesActive} Units</strong></span>
+                    <span>Cold Cells: <strong>{hub.activeColdRooms}</strong></span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 7. CSA SUBSCRIPTION BOXES MANAGEMENT TAB */}
+        {activeTab === 'csa' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', backgroundColor: '#ffffff', padding: '18px 24px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+              <div>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                  Community Supported Agriculture (CSA) Plans
+                </h3>
+                <p style={{ margin: '2px 0 0', fontSize: '0.84rem', color: '#64748b' }}>
+                  Manage direct consumer subscription harvest crates, weekly pricing, and included items.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsAddCSAModalOpen(true)}
+                style={{
+                  backgroundColor: '#0f172a',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '9px 16px',
+                  borderRadius: '8px',
+                  fontSize: '0.84rem',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                + Create New CSA Plan
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+              {csaPlans.map((plan) => (
+                <div key={plan.id} style={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                  <img src={plan.imageUrl} alt={plan.name} style={{ width: '100%', height: '140px', objectFit: 'cover' }} />
+                  <div style={{ padding: '18px', display: 'flex', flexDirection: 'column', flex: 1, gap: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                        {plan.name}
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteCSAPlan(plan.id, plan.name)}
+                        style={{ border: 'none', background: 'transparent', color: '#ef4444', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 700 }}
+                      >
+                        Delete
+                      </button>
+                    </div>
+
+                    <p style={{ fontSize: '0.82rem', color: '#64748b', margin: 0 }}>{plan.tagline}</p>
+
+                    <div style={{ backgroundColor: '#f8fafc', padding: '10px', borderRadius: '8px', marginTop: 'auto' }}>
+                      <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#166534' }}>
+                        {(plan.pricePerDeliveryXaf || 22000).toLocaleString()} FCFA
+                        <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 400 }}> / delivery</span>
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: '#475569' }}>
+                        Weight: {plan.weightKg} kg • Servings: {plan.servings}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
       </div>
+
+      {/* ADD LOGISTICS HUB MODAL */}
+      {isAddHubModalOpen && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.7)',
+          backdropFilter: 'blur(3px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: '16px',
+            maxWidth: '500px',
+            width: '100%',
+            padding: '28px',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
+          }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', marginBottom: '16px' }}>
+              Add Cold-Chain Logistics Hub
+            </h3>
+
+            <form onSubmit={handleAddHub} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                  Hub Facility Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Limbe Coastal Marine Cold Staging Bay"
+                  value={newHubName}
+                  onChange={(e) => setNewHubName(e.target.value)}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                  required
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                  Corridor Region
+                </label>
+                <select
+                  value={newHubRegion}
+                  onChange={(e) => setNewHubRegion(e.target.value)}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                >
+                  <option value="Littoral & Coastal">Littoral & Coastal</option>
+                  <option value="West Highlands (Foumbot/Bafoussam)">West Highlands (Foumbot/Bafoussam)</option>
+                  <option value="Centre & Yaoundé">Centre & Yaoundé</option>
+                  <option value="Southwest & Mt. Cameroon">Southwest & Mt. Cameroon</option>
+                  <option value="North & Adamawa">North & Adamawa</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                  Physical Location
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Limbe Port Commercial Dockyard"
+                  value={newHubLocation}
+                  onChange={(e) => setNewHubLocation(e.target.value)}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                    Capacity (Tons)
+                  </label>
+                  <input
+                    type="number"
+                    value={newHubCapacity}
+                    onChange={(e) => setNewHubCapacity(Number(e.target.value))}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                    Cold Cells
+                  </label>
+                  <input
+                    type="number"
+                    value={newHubRooms}
+                    onChange={(e) => setNewHubRooms(Number(e.target.value))}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                    Target Temp (°C)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={newHubTemp}
+                    onChange={(e) => setNewHubTemp(Number(e.target.value))}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsAddHubModalOpen(false)}
+                  style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', background: 'transparent', cursor: 'pointer', fontWeight: 700 }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: '#0f172a', color: '#ffffff', cursor: 'pointer', fontWeight: 800 }}
+                >
+                  Create Depot
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ADD CSA PLAN MODAL */}
+      {isAddCSAModalOpen && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.7)',
+          backdropFilter: 'blur(3px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: '16px',
+            maxWidth: '520px',
+            width: '100%',
+            padding: '28px',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
+          }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', marginBottom: '16px' }}>
+              Create New CSA Subscription Farm Share
+            </h3>
+
+            <form onSubmit={handleAddCSAPlan} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                  Subscription Box Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. The Highland Organic Harvest Share"
+                  value={newCSAName}
+                  onChange={(e) => setNewCSAName(e.target.value)}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                  required
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                  Tagline / Description
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Weekly selection of fresh organic root vegetables & herbs"
+                  value={newCSATagline}
+                  onChange={(e) => setNewCSATagline(e.target.value)}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                    Price per Box (FCFA)
+                  </label>
+                  <input
+                    type="number"
+                    value={newCSAPriceXaf}
+                    onChange={(e) => setNewCSAPriceXaf(Number(e.target.value))}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                    required
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                    Weight (kg)
+                  </label>
+                  <input
+                    type="number"
+                    value={newCSAWeight}
+                    onChange={(e) => setNewCSAWeight(Number(e.target.value))}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                    Family Serving Size
+                  </label>
+                  <input
+                    type="text"
+                    value={newCSAServings}
+                    onChange={(e) => setNewCSAServings(e.target.value)}
+                    placeholder="e.g. Family of 3–5"
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                    required
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                    Cover Image URL
+                  </label>
+                  <input
+                    type="url"
+                    value={newCSAImage}
+                    onChange={(e) => setNewCSAImage(e.target.value)}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                  Included Items (comma separated)
+                </label>
+                <input
+                  type="text"
+                  value={newCSAItems}
+                  onChange={(e) => setNewCSAItems(e.target.value)}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsAddCSAModalOpen(false)}
+                  style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', background: 'transparent', cursor: 'pointer', fontWeight: 700 }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: '#0f172a', color: '#ffffff', cursor: 'pointer', fontWeight: 800 }}
+                >
+                  Publish Plan
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ADD USER MODAL */}
       {isAddUserModalOpen && (

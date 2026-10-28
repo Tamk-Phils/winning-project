@@ -55,7 +55,7 @@ export const FarmerPortal: React.FC<FarmerPortalProps> = ({
     grade: 'Grade A+ Premium',
     isOrganic: true,
     isRegenerative: true,
-    certifications: ['USDA Organic', 'Regenerative Organic Certified'],
+    certifications: ['MINADER Certified Organic', 'Penja PGI Geographical Indication', 'Ecological GAP Standard'],
     description: '',
     imageUrl: 'https://images.unsplash.com/photo-1597362925123-77861d3fbac7?auto=format&fit=crop&w=800&q=80',
   });
@@ -84,6 +84,9 @@ export const FarmerPortal: React.FC<FarmerPortalProps> = ({
     e.preventDefault();
     if (!formData.produceName.trim() || !currentFarm) return;
 
+    const calculatedRetailXaf = Math.round(Number(formData.retailPrice) * 600);
+    const calculatedWholesaleXaf = Math.round(Number(formData.wholesalePrice) * 600);
+
     const newProduct: Product = {
       id: `prod-${Date.now()}`,
       name: formData.produceName,
@@ -96,8 +99,10 @@ export const FarmerPortal: React.FC<FarmerPortalProps> = ({
       description: formData.description || `Freshly harvested from ${currentFarm.name}. Certified sustainable agricultural batch with unbroken cold-chain transport.`,
       imageUrl: formData.imageUrl,
       retailPrice: Number(formData.retailPrice),
+      retailPriceXaf: calculatedRetailXaf,
       retailUnit: formData.unit,
       wholesalePrice: Number(formData.wholesalePrice),
+      wholesalePriceXaf: calculatedWholesaleXaf,
       wholesaleUnit: `${formData.unit} (Bulk crate)`,
       wholesaleMinOrder: Number(formData.wholesaleMinOrder),
       stockQuantity: Number(formData.quantity),
@@ -261,11 +266,11 @@ export const FarmerPortal: React.FC<FarmerPortalProps> = ({
               </div>
             </div>
             <div style={{ fontSize: '1.9rem', fontWeight: 800, color: 'var(--primary-900)', fontFamily: 'var(--font-heading)' }}>
-              ${estimatedBatchValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {Math.round(estimatedBatchValue * 600).toLocaleString()} FCFA
             </div>
             <div style={{ fontSize: '0.78rem', color: '#047857', fontWeight: 600, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <TrendingUp size={14} />
-              <span>88.6% released straight to farm escrow</span>
+              <span>≈ ${estimatedBatchValue.toFixed(2)} USD • 88.6% released straight to farm escrow</span>
             </div>
           </div>
 
@@ -475,11 +480,17 @@ export const FarmerPortal: React.FC<FarmerPortalProps> = ({
                     </td>
 
                     <td style={{ padding: '14px 16px', fontWeight: 700, color: 'var(--primary-900)' }}>
-                      ${prod.retailPrice.toFixed(2)} / {prod.retailUnit}
+                      {(prod.retailPriceXaf || Math.round(prod.retailPrice * 600)).toLocaleString()} FCFA
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                        (${prod.retailPrice.toFixed(2)}) / {prod.retailUnit}
+                      </div>
                     </td>
 
                     <td style={{ padding: '14px 16px', color: '#047857', fontWeight: 700 }}>
-                      ${prod.wholesalePrice.toFixed(2)} <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 400 }}>({prod.wholesaleMinOrder} min)</span>
+                      {(prod.wholesalePriceXaf || Math.round(prod.wholesalePrice * 600)).toLocaleString()} FCFA
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 400 }}>
+                        (${prod.wholesalePrice.toFixed(2)} • {prod.wholesaleMinOrder} min)
+                      </div>
                     </td>
 
                     <td style={{ padding: '14px 16px' }}>

@@ -33,15 +33,24 @@ export const WholesaleHubView: React.FC<WholesaleHubViewProps> = ({
 
   const selectedProduct = products.find(p => p.id === selectedProductId) || products[0];
 
-  // Volume calculator values
+  // Volume calculator values with dual XAF / USD support
+  const retailXaf = selectedProduct?.retailPriceXaf || Math.round((selectedProduct?.retailPrice || 0) * 600);
+  const wholesaleXaf = selectedProduct?.wholesalePriceXaf || Math.round((selectedProduct?.wholesalePrice || 0) * 600);
+
   const retailTotal = (selectedProduct?.retailPrice || 0) * calcQuantity;
+  const retailTotalXaf = retailXaf * calcQuantity;
+
   const wholesaleRate = selectedProduct?.wholesalePrice || 0;
-  
-  // Additional tier discount for mega volumes (over 200kg)
   const volumeDiscountRate = calcQuantity >= 500 ? wholesaleRate * 0.90 : (calcQuantity >= 200 ? wholesaleRate * 0.95 : wholesaleRate);
+  const wholesaleRateXaf = calcQuantity >= 500 ? Math.round(wholesaleXaf * 0.90) : (calcQuantity >= 200 ? Math.round(wholesaleXaf * 0.95) : wholesaleXaf);
+
   const wholesaleTotal = volumeDiscountRate * calcQuantity;
+  const wholesaleTotalXaf = wholesaleRateXaf * calcQuantity;
+
+  const totalSavingsXaf = retailTotalXaf - wholesaleTotalXaf;
   const totalSavings = retailTotal - wholesaleTotal;
-  const savingsPercent = Math.round((totalSavings / retailTotal) * 100);
+  const savingsPercent = Math.round((totalSavingsXaf / (retailTotalXaf || 1)) * 100);
+  const farmerEarningsXaf = Math.round(wholesaleTotalXaf * 0.886);
   const farmerEarnings = wholesaleTotal * 0.886;
 
   const handleOrderWholesaleDirect = () => {
@@ -203,26 +212,26 @@ export const WholesaleHubView: React.FC<WholesaleHubViewProps> = ({
                 <div style={{ fontSize: '0.85rem', color: '#a7f3d0', marginTop: '6px' }}>
                   Wholesale Commercial Contract Total:
                 </div>
-                <div style={{ fontSize: '2.4rem', fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
-                  ${wholesaleTotal.toFixed(2)}
+                <div style={{ fontSize: '2.2rem', fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
+                  {wholesaleTotalXaf.toLocaleString()} FCFA
                 </div>
-                <div style={{ fontSize: '0.82rem', color: '#34d399', fontWeight: 600 }}>
-                  Effective Price: ${(wholesaleTotal / calcQuantity).toFixed(2)} / {selectedProduct?.retailUnit}
+                <div style={{ fontSize: '0.85rem', color: '#34d399', fontWeight: 600 }}>
+                  ≈ ${wholesaleTotal.toFixed(2)} USD • Effective: {Math.round(wholesaleTotalXaf / calcQuantity).toLocaleString()} FCFA/kg (${(wholesaleTotal / calcQuantity).toFixed(2)}/kg)
                 </div>
               </div>
 
               <div style={{ padding: '12px', backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 'var(--radius-md)', fontSize: '0.85rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                   <span style={{ color: '#d1fae5' }}>Compared to Retail Store:</span>
-                  <span style={{ textDecoration: 'line-through', opacity: 0.7 }}>${retailTotal.toFixed(2)}</span>
+                  <span style={{ textDecoration: 'line-through', opacity: 0.7 }}>{retailTotalXaf.toLocaleString()} FCFA (${retailTotal.toFixed(2)})</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fbbf24', fontWeight: 700 }}>
                   <span>Your Commercial Savings:</span>
-                  <span>Save ${totalSavings.toFixed(2)} ({savingsPercent}%)</span>
+                  <span>Save {totalSavingsXaf.toLocaleString()} FCFA (~${totalSavings.toFixed(2)}, {savingsPercent}%)</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: '#34d399', fontWeight: 700, marginTop: '6px', paddingTop: '6px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                  <span>🌱 Direct to Farm Escrow:</span>
-                  <span>${farmerEarnings.toFixed(2)} (88.6%)</span>
+                  <span>🌱 Direct to Farm Cooperative:</span>
+                  <span>{farmerEarningsXaf.toLocaleString()} FCFA (~${farmerEarnings.toFixed(2)}, 88.6%)</span>
                 </div>
               </div>
 
@@ -324,7 +333,7 @@ export const WholesaleHubView: React.FC<WholesaleHubViewProps> = ({
                       </td>
 
                       <td style={{ padding: '14px 16px', fontWeight: 800, color: '#047857' }}>
-                        ${p.wholesalePrice.toFixed(2)} <span style={{ fontSize: '0.75rem', fontWeight: 400, color: 'var(--text-muted)' }}>/{p.wholesaleUnit}</span>
+                        {(p.wholesalePriceXaf || Math.round(p.wholesalePrice * 600)).toLocaleString()} FCFA <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-muted)' }}>(${p.wholesalePrice.toFixed(2)}) /{p.wholesaleUnit}</span>
                       </td>
 
                       <td style={{ padding: '14px 16px' }}>

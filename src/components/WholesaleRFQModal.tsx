@@ -20,18 +20,18 @@ export const WholesaleRFQModal: React.FC<WholesaleRFQModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  const [companyName, setCompanyName] = useState<string>('Bistro Bonne Terre');
-  const [contactPerson, setContactPerson] = useState<string>('Chef Antoine Mercier');
-  const [email, setEmail] = useState<string>('sourcing@bistrobonneterre.com');
-  const [phone, setPhone] = useState<string>('+1 (415) 555-8930');
-  const [produceNeeded, setProduceNeeded] = useState<string>('Organic Heirloom Tomatoes & Rainbow Carrots');
+  const [companyName, setCompanyName] = useState<string>('Douala Grand Gourmet S.A.');
+  const [contactPerson, setContactPerson] = useState<string>('Chef Henri Essomba');
+  const [email, setEmail] = useState<string>('sourcing@doualagourmet.cm');
+  const [phone, setPhone] = useState<string>('+237 677 89 20 45');
+  const [produceNeeded, setProduceNeeded] = useState<string>('Volcanic Penja White Pepper & Plantains');
   const [category, setCategory] = useState<string>('Fresh Vegetables');
   const [volumeNeeded, setVolumeNeeded] = useState<string>('150 kg weekly');
   const [frequency, setFrequency] = useState<BulkRFQ['frequency']>('Weekly Recurring');
-  const [deliveryLocation, setDeliveryLocation] = useState<string>('San Francisco, CA');
-  const [targetPriceRange, setTargetPriceRange] = useState<string>('$2.10 - $2.40 / kg');
+  const [deliveryLocation, setDeliveryLocation] = useState<string>('Douala, Akwa Commercial Wholesale Depot');
+  const [targetPriceRange, setTargetPriceRange] = useState<string>('1,250 - 1,500 FCFA / kg ($2.10 - $2.50)');
   const [coldChainRequired, setColdChainRequired] = useState<boolean>(true);
-  const [additionalNotes, setAdditionalNotes] = useState<string>('Need early morning delivery before 08:30 AM before restaurant service prep.');
+  const [additionalNotes, setAdditionalNotes] = useState<string>('Requires morning refrigerated drop-off before 08:00 AM at the central cold dock.');
   
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
 
@@ -254,7 +254,7 @@ export const WholesaleRFQModal: React.FC<WholesaleRFQModalProps> = ({
                   <label className="form-label">Target Price Range</label>
                   <input 
                     type="text" 
-                    placeholder="e.g. $2.00 - $2.50 / kg"
+                    placeholder="e.g. 1,200 - 1,500 FCFA / kg ($2.00 - $2.50)"
                     value={targetPriceRange}
                     onChange={(e) => setTargetPriceRange(e.target.value)}
                     className="form-input" 
@@ -263,10 +263,11 @@ export const WholesaleRFQModal: React.FC<WholesaleRFQModalProps> = ({
               </div>
 
               <div style={{ marginBottom: '14px' }}>
-                <label className="form-label">Delivery Destination (City, State / ZIP)</label>
+                <label className="form-label">Delivery Destination (City, Hub / Region)</label>
                 <input 
                   type="text" 
                   required
+                  placeholder="e.g. Douala Bonanjo, Yaounde Bastos, Bafoussam"
                   value={deliveryLocation}
                   onChange={(e) => setDeliveryLocation(e.target.value)}
                   className="form-input" 

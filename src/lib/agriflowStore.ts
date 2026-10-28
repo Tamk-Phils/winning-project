@@ -4,7 +4,9 @@ import type {
   ServiceProvider, 
   ServiceBooking, 
   Order, 
-  PlatformUser 
+  PlatformUser,
+  LogisticsHub,
+  CSABoxPlan
 } from '../types';
 
 const FARMS_KEY = 'agriflow_farms_v3';
@@ -13,6 +15,8 @@ const PROVIDERS_KEY = 'agriflow_service_providers_v3';
 const BOOKINGS_KEY = 'agriflow_service_bookings_v3';
 const ORDERS_KEY = 'agriflow_orders_v3';
 const USERS_KEY = 'agriflow_platform_users_v3';
+const HUBS_KEY = 'agriflow_logistics_hubs_v3';
+const CSA_PLANS_KEY = 'agriflow_csa_plans_v3';
 
 // ---------------------------------------------------------------------------
 // 1. SEED SUPPLIERS (5 Real Cameroonian Agricultural Cooperatives & Farms)
@@ -2048,3 +2052,231 @@ export function deletePlatformUserFromStore(userId: string): void {
 
   notifyStoreUpdated();
 }
+
+// ---------------------------------------------------------------------------
+// 7. COLD-CHAIN LOGISTICS HUBS (5 Regional Cameroonian & Corridor Depots)
+// ---------------------------------------------------------------------------
+export const SEED_LOGISTICS_HUBS: LogisticsHub[] = [
+  {
+    id: 'hub-douala-01',
+    name: 'Douala Port Chilled Export Terminal',
+    region: 'Littoral & Coastal',
+    location: 'Port Autonome de Douala Terminal Frigorifique',
+    country: 'Cameroon',
+    capacityTons: 380,
+    activeColdRooms: 8,
+    targetTempRange: '1.5°C – 3.5°C',
+    currentTemp: 2.4,
+    humidity: 91,
+    status: 'optimal',
+    fleetVehiclesActive: 16,
+    coordinates: { lat: 4.0511, lng: 9.7679 }
+  },
+  {
+    id: 'hub-foumbot-02',
+    name: 'Foumbot Valley Central Consolidation Depot',
+    region: 'West Highlands (Foumbot/Bafoussam)',
+    location: 'Foumbot Valley Central Loading Bay',
+    country: 'Cameroon',
+    capacityTons: 220,
+    activeColdRooms: 6,
+    targetTempRange: '2.0°C – 4.0°C',
+    currentTemp: 3.1,
+    humidity: 89,
+    status: 'high_volume',
+    fleetVehiclesActive: 12,
+    coordinates: { lat: 5.5083, lng: 10.6317 }
+  },
+  {
+    id: 'hub-yaounde-03',
+    name: 'Yaoundé Nsam Central Cold Storage Hub',
+    region: 'Centre & Yaoundé',
+    location: 'Nsam Intermodal Freight Logistics Park',
+    country: 'Cameroon',
+    capacityTons: 310,
+    activeColdRooms: 7,
+    targetTempRange: '2.0°C – 4.0°C',
+    currentTemp: 2.9,
+    humidity: 88,
+    status: 'optimal',
+    fleetVehiclesActive: 14,
+    coordinates: { lat: 3.8480, lng: 11.5021 }
+  },
+  {
+    id: 'hub-buea-04',
+    name: 'Buea Mountain Cold-Chain Transit Locker',
+    region: 'Southwest & Mt. Cameroon',
+    location: 'Buea Town Agricultural Export Staging Hub',
+    country: 'Cameroon',
+    capacityTons: 140,
+    activeColdRooms: 4,
+    targetTempRange: '1.0°C – 3.0°C',
+    currentTemp: 2.1,
+    humidity: 93,
+    status: 'dispatching',
+    fleetVehiclesActive: 8,
+    coordinates: { lat: 4.1560, lng: 9.2435 }
+  },
+  {
+    id: 'hub-bafoussam-05',
+    name: 'Bafoussam Regional Perishables Hub',
+    region: 'West Highlands (Foumbot/Bafoussam)',
+    location: 'Bafoussam-Bamenda Commercial Junction',
+    country: 'Cameroon',
+    capacityTons: 190,
+    activeColdRooms: 5,
+    targetTempRange: '2.5°C – 4.5°C',
+    currentTemp: 3.6,
+    humidity: 87,
+    status: 'optimal',
+    fleetVehiclesActive: 10,
+    coordinates: { lat: 5.4778, lng: 10.4176 }
+  }
+];
+
+export function getStoredLogisticsHubs(): LogisticsHub[] {
+  try {
+    const raw = localStorage.getItem(HUBS_KEY);
+    if (!raw) {
+      localStorage.setItem(HUBS_KEY, JSON.stringify(SEED_LOGISTICS_HUBS));
+      return SEED_LOGISTICS_HUBS;
+    }
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : SEED_LOGISTICS_HUBS;
+  } catch {
+    return SEED_LOGISTICS_HUBS;
+  }
+}
+
+export function saveLogisticsHubToStore(hub: LogisticsHub): void {
+  const current = getStoredLogisticsHubs();
+  const index = current.findIndex(h => h.id === hub.id);
+  let updated: LogisticsHub[];
+  if (index >= 0) {
+    updated = [...current];
+    updated[index] = hub;
+  } else {
+    updated = [hub, ...current];
+  }
+  localStorage.setItem(HUBS_KEY, JSON.stringify(updated));
+  notifyStoreUpdated();
+}
+
+export function deleteLogisticsHubFromStore(hubId: string): void {
+  const current = getStoredLogisticsHubs();
+  const updated = current.filter(h => h.id !== hubId);
+  localStorage.setItem(HUBS_KEY, JSON.stringify(updated));
+  notifyStoreUpdated();
+}
+
+export function updateLogisticsTelemetryInStore(hubId: string, currentTemp: number, humidity: number, status: LogisticsHub['status']): void {
+  const current = getStoredLogisticsHubs();
+  const updated = current.map(h => h.id === hubId ? { ...h, currentTemp, humidity, status } : h);
+  localStorage.setItem(HUBS_KEY, JSON.stringify(updated));
+  notifyStoreUpdated();
+}
+
+// ---------------------------------------------------------------------------
+// 8. CSA SUBSCRIPTION BOXES
+// ---------------------------------------------------------------------------
+export const SEED_CSA_PLANS: CSABoxPlan[] = [
+  {
+    id: 'csa-bounty',
+    name: 'The Seasonal Farmstead Bounty Box',
+    tagline: "Hand-harvested that morning across Moungo & Foumbot volcanic valleys",
+    servings: 'Ideal for a household of 3–5 (8–10 kg total)',
+    weightKg: 9,
+    pricePerDelivery: 36.50,
+    pricePerDeliveryXaf: 22000,
+    cadence: 'weekly',
+    description: 'Our premier weekly farm share delivering certified fresh organic produce directly to urban kitchens.',
+    includedCategories: ['fruits', 'vegetables', 'herbs'],
+    sampleItems: [
+      '3 kg Sweet French Horn Plantains',
+      '2 kg Vine-Ripened Roma Tomatoes',
+      '1.5 kg Crispy Savoy Cabbage',
+      '1 kg Volcanic Yellow Onions',
+      '250g Dried Penja White Pepper berries',
+      '1 bunch Wild Lemon Verbena'
+    ],
+    imageUrl: 'https://images.unsplash.com/photo-1610348725531-843dff563e2c?auto=format&fit=crop&w=800&q=80',
+    popularityBadge: 'Most Popular'
+  },
+  {
+    id: 'csa-chef',
+    name: "The Chef's Artisanal Culinary Crate",
+    tagline: 'Rare African spices, PGI Penja pepper, raw wild forest honey, and organic greens',
+    servings: 'For culinary artisans, expatriates & boutique restaurants (6 kg)',
+    weightKg: 6,
+    pricePerDelivery: 52.00,
+    pricePerDeliveryXaf: 32000,
+    cadence: 'weekly',
+    description: 'Chef curated crate of rare heirloom aromatics, mushrooms, and prized African botanical ingredients.',
+    includedCategories: ['herbs', 'grains', 'bundles'],
+    sampleItems: [
+      '500g PGI Penja Black & White Pepper',
+      '1 kg Oku White Honeycomb Jar (Mountain Flora)',
+      '2 kg Rare Forest Oyster Mushrooms',
+      '1.5 kg Fresh Ndolé Leaf Herb Plugs',
+      '1 L Cold-Pressed Red Palm Fruit Oil'
+    ],
+    imageUrl: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=800&q=80',
+    popularityBadge: "Chef's Choice"
+  },
+  {
+    id: 'csa-fruit',
+    name: 'The Orchard Tropical Fruit & Pure Honey Crate',
+    tagline: 'Volcanic sun-ripened organic fruits and raw highland comb',
+    servings: 'For fruit lovers & clean eaters (7 kg)',
+    weightKg: 7,
+    pricePerDelivery: 32.00,
+    pricePerDeliveryXaf: 19500,
+    cadence: 'weekly',
+    description: 'High-Brix sun-drenched seasonal fruits harvested directly from certified Moungo and Penja family groves.',
+    includedCategories: ['fruits', 'dairy_honey'],
+    sampleItems: [
+      '3 kg Njombe Sweet Solo Papaya & Pineapples',
+      '2 kg Golden Cameroon Bananas',
+      '1.5 kg Seasonal Passion Fruits & Guavas',
+      '500g Raw Wildflower Apiary Honey'
+    ],
+    imageUrl: 'https://images.unsplash.com/photo-1586771107445-d3ca888129ff?auto=format&fit=crop&w=800&q=80',
+    popularityBadge: 'Seasonal Sweet'
+  }
+];
+
+export function getStoredCSAPlans(): CSABoxPlan[] {
+  try {
+    const raw = localStorage.getItem(CSA_PLANS_KEY);
+    if (!raw) {
+      localStorage.setItem(CSA_PLANS_KEY, JSON.stringify(SEED_CSA_PLANS));
+      return SEED_CSA_PLANS;
+    }
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : SEED_CSA_PLANS;
+  } catch {
+    return SEED_CSA_PLANS;
+  }
+}
+
+export function saveCSAPlanToStore(plan: CSABoxPlan): void {
+  const current = getStoredCSAPlans();
+  const index = current.findIndex(p => p.id === plan.id);
+  let updated: CSABoxPlan[];
+  if (index >= 0) {
+    updated = [...current];
+    updated[index] = plan;
+  } else {
+    updated = [plan, ...current];
+  }
+  localStorage.setItem(CSA_PLANS_KEY, JSON.stringify(updated));
+  notifyStoreUpdated();
+}
+
+export function deleteCSAPlanFromStore(planId: string): void {
+  const current = getStoredCSAPlans();
+  const updated = current.filter(p => p.id !== planId);
+  localStorage.setItem(CSA_PLANS_KEY, JSON.stringify(updated));
+  notifyStoreUpdated();
+}
+

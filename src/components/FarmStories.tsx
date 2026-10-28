@@ -346,7 +346,9 @@ export const FarmStories: React.FC<FarmStoriesProps> = ({
                         <img src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100px', objectFit: 'cover' }} />
                         <div style={{ padding: '8px 10px' }}>
                           <div style={{ fontSize: '0.82rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
-                          <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--primary-800)' }}>${p.retailPrice.toFixed(2)} <span style={{ fontSize: '0.72rem', fontWeight: 400 }}>/{p.retailUnit}</span></div>
+                          <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--primary-800)' }}>
+                            {(p.retailPriceXaf || Math.round(p.retailPrice * 600)).toLocaleString()} FCFA <span style={{ fontSize: '0.72rem', fontWeight: 400, color: 'var(--text-muted)' }}>(${p.retailPrice.toFixed(2)}) /{p.retailUnit}</span>
+                          </div>
                         </div>
                       </div>
                     ))}

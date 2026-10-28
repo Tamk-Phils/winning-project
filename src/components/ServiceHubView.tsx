@@ -754,27 +754,15 @@ export const ServiceHubView: React.FC<ServiceHubViewProps> = ({
 
       {/* REGISTER AS SERVICE PROVIDER MODAL */}
       {isRegisterModalOpen && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.7)',
-          backdropFilter: 'blur(3px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: '20px'
-        }}>
-          <div style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '16px',
-            maxWidth: '620px',
-            width: '100%',
-            maxHeight: '90vh',
-            overflowY: 'auto',
-            padding: '28px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
-          }}>
+        <div className="modal-backdrop" onClick={() => setIsRegisterModalOpen(false)}>
+          <div 
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: '620px',
+              padding: '28px',
+            }}
+          >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
               <div>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>

@@ -25,29 +25,29 @@ export const FarmerOnboardingView: React.FC<FarmerOnboardingViewProps> = ({
   const [createdFarm, setCreatedFarm] = useState<Farm | null>(null);
 
   // Form State
-  const [farmName, setFarmName] = useState<string>('Whispering Pine Regenerative Farm');
-  const [ownerName, setOwnerName] = useState<string>('Hannah & David Miller');
-  const [email, setEmail] = useState<string>('hannah@whisperingpinefarm.org');
-  const [phone, setPhone] = useState<string>('+1 (509) 555-0133');
-  const [location, setLocation] = useState<string>('Yakima River Valley');
-  const [state, setState] = useState<string>('Washington');
+  const [farmName, setFarmName] = useState<string>('Coopérative Agro-Écologique de Penja');
+  const [ownerName, setOwnerName] = useState<string>('Honoré & Suzanne Tchakounté');
+  const [email, setEmail] = useState<string>('honore.tchakounte@penjacoop.cm');
+  const [phone, setPhone] = useState<string>('+237 6 99 44 88 12');
+  const [location, setLocation] = useState<string>('Penja Valley, Moungo');
+  const [state, setState] = useState<string>('Littoral');
   const [region, setRegion] = useState<Farm['region']>('Littoral & Coastal');
-  const [acreage, setAcreage] = useState<number>(65);
-  const [tagline, setTagline] = useState<string>('Certified organic heritage stone fruit, sweet cherries, and lavender');
-  const [story, setStory] = useState<string>('Founded on glacial alluvial soils, we utilize zero synthetic nitrogen and rely on multi-species cover crops to nourish our heritage apricot, peach, and heirloom apple orchards.');
+  const [acreage, setAcreage] = useState<number>(45);
+  const [tagline, setTagline] = useState<string>('PGI Certified Penja white & black pepper, plantains and organic citrus');
+  const [story, setStory] = useState<string>('Cultivating rich volcanic soils on the slopes of Mount Koupé, our family farm practices shade-grown organic agroforestry, producing authentic Penja pepper recognized globally.');
   
   // Practices
   const [practices, setPractices] = useState<string[]>([
-    'No-Till Soil Management',
-    'Cover Cropping',
+    'Living Soil Mulching',
+    'Volcanic Compost Integration',
     'Drip Precision Irrigation',
-    'Zero Synthetic Fertilizers'
+    'Zero Synthetic Pesticides'
   ]);
 
   // Certifications
   const [certifications, setCertifications] = useState<string[]>([
-    'USDA Organic',
-    'Regenerative Organic Certified'
+    'PGI Penja Certified (OAPI)',
+    'GAP Good Agricultural Practices'
   ]);
 
   const [hasColdStorage, setHasColdStorage] = useState<boolean>(true);

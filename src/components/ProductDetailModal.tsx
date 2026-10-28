@@ -52,7 +52,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         style={{ 
           maxWidth: '860px', 
           width: '100%', 
-          maxHeight: '92vh', 
+          maxHeight: 'calc(100vh - 64px)', 
           overflowY: 'auto', 
           overflowX: 'hidden',
           WebkitOverflowScrolling: 'touch',
@@ -239,10 +239,10 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               >
                 <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Retail Tier</div>
                 <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary-900)' }}>
-                  {(product.retailPriceXaf || product.retailPrice * 600).toLocaleString()} F
+                  {(product.retailPriceXaf || Math.round(product.retailPrice * 600)).toLocaleString()} FCFA
                 </div>
                 <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>
-                  ${product.retailPrice.toFixed(2)} / {product.retailUnit}
+                  ≈ ${product.retailPrice.toFixed(2)} / {product.retailUnit}
                 </div>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>Direct for homes & small prep</div>
               </div>
@@ -263,10 +263,10 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   <span className="badge badge-amber" style={{ padding: '1px 6px', fontSize: '0.65rem' }}>Save {Math.round(((product.retailPrice - product.wholesalePrice) / product.retailPrice) * 100)}%</span>
                 </div>
                 <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#047857' }}>
-                  {(product.wholesalePriceXaf || product.wholesalePrice * 600).toLocaleString()} F
+                  {(product.wholesalePriceXaf || Math.round(product.wholesalePrice * 600)).toLocaleString()} FCFA
                 </div>
                 <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#047857' }}>
-                  ${product.wholesalePrice.toFixed(2)} / {product.wholesaleUnit}
+                  ≈ ${product.wholesalePrice.toFixed(2)} / {product.wholesaleUnit}
                 </div>
                 <div style={{ fontSize: '0.72rem', color: 'var(--amber-600)', fontWeight: 600, marginTop: '4px' }}>Min {product.wholesaleMinOrder} {product.wholesaleUnit.split(' ')[0]}s</div>
               </div>

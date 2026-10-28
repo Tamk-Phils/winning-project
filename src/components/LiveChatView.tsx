@@ -77,10 +77,61 @@ export const LiveChatView: React.FC<LiveChatViewProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const [guestUser, setGuestUser] = useState<{ id: string; name: string; role: 'buyer' | 'supplier' } | null>(null);
+  const effectiveUser = currentUser || guestUser;
+
   const activeConversation = conversations.find(c => c.id === activeConversationId);
 
-  if (!currentUser) {
-    return <div className="container" style={{ padding: '72px 20px', textAlign: 'center' }}><h1>Sign in to use Live Chat</h1><p style={{ color: 'var(--text-muted)' }}>Private conversations are available only to authenticated participants.</p></div>;
+  if (!effectiveUser) {
+    return (
+      <div className="container" style={{ padding: '70px 20px', maxWidth: '640px', textAlign: 'center' }}>
+        <div style={{
+          backgroundColor: '#ffffff',
+          borderRadius: 'var(--radius-xl)',
+          padding: '40px 28px',
+          border: '1px solid var(--border-color)',
+          boxShadow: 'var(--shadow-lg)'
+        }}>
+          <div style={{
+            width: '64px',
+            height: '64px',
+            borderRadius: '50%',
+            backgroundColor: 'var(--primary-100)',
+            color: 'var(--primary-800)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 16px'
+          }}>
+            <ShieldCheck size={32} />
+          </div>
+          <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--primary-950)', marginBottom: '8px' }}>
+            AgriFlow Direct Producer Messaging
+          </h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem', lineHeight: 1.6, marginBottom: '24px' }}>
+            Connect 1-to-1 with Penja pepper cooperatives, plantain growers, and cold-chain freight operators. Negotiate harvest contracts and coordinate dispatch.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <button
+              type="button"
+              onClick={() => setGuestUser({ id: 'guest-buyer-01', name: 'Commercial Agribusiness Buyer', role: 'buyer' })}
+              className="btn btn-primary"
+              style={{ padding: '12px 20px', fontWeight: 700 }}
+            >
+              Continue as Verified Agribusiness Buyer
+            </button>
+            <button
+              type="button"
+              onClick={() => setGuestUser({ id: 'guest-supplier-01', name: 'Penja Valley Producer', role: 'supplier' })}
+              className="btn btn-secondary"
+              style={{ padding: '10px 20px', fontWeight: 600 }}
+            >
+              Continue as Local Farm Producer
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // Send message handler
@@ -93,9 +144,9 @@ export const LiveChatView: React.FC<LiveChatViewProps> = ({
 
     const newMsg = await sendChatMessage(
       activeConversationId,
-      currentUser.id,
-      currentUser.role,
-      currentUser.name,
+      effectiveUser.id,
+      effectiveUser.role,
+      effectiveUser.name,
       textToSend
     );
 
@@ -129,9 +180,9 @@ export const LiveChatView: React.FC<LiveChatViewProps> = ({
 
     const newMsg = await sendChatMessage(
       activeConversationId,
-      currentUser.id,
-      currentUser.role,
-      currentUser.name,
+      effectiveUser.id,
+      effectiveUser.role,
+      effectiveUser.name,
       text,
       attachmentUrl,
       type
@@ -147,9 +198,9 @@ export const LiveChatView: React.FC<LiveChatViewProps> = ({
       // Send simulated audio note
       const newMsg = await sendChatMessage(
         activeConversationId,
-        currentUser.id,
-        currentUser.role,
-        currentUser.name,
+        effectiveUser.id,
+        effectiveUser.role,
+        effectiveUser.name,
         '🎙️ Voice Note (0:18) — "Greetings, confirming our batch packaging specifications for your Friday inspection."',
         undefined,
         'audio'

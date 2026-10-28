@@ -10,10 +10,12 @@ import {
   Minus, 
   CheckCircle2, 
   RotateCcw,
-  Bot
+  Bot,
+  Sliders
 } from 'lucide-react';
 import type { AppView, VoiceLanguage, Product, DemandOpportunity } from '../types';
 import { askAgriFlowAssistant, detectActionFromMessage, type AssistantAction } from '../lib/aiAssistant';
+import { playSpokenText, stopSpokenText, initializeVoiceEngine, getAvailableVoices, type VoiceEngineMode } from '../lib/speechUtils';
 
 interface ChatMessage {
   id: string;
@@ -57,6 +59,33 @@ export const AIAssistantWidget: React.FC<AIAssistantWidgetProps> = ({
   const [inputText, setInputText] = useState<string>('');
   const [isThinking, setIsThinking] = useState<boolean>(false);
 
+  // High quality voice selection states
+  const [voiceMode, setVoiceMode] = useState<VoiceEngineMode>(() => {
+    try {
+      return (localStorage.getItem('agriflow_voice_mode') as VoiceEngineMode) || 'natural';
+    } catch {
+      return 'natural';
+    }
+  });
+  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>(() => getAvailableVoices());
+  const [selectedVoiceURI, setSelectedVoiceURI] = useState<string>(() => {
+    try {
+      return localStorage.getItem('agriflow_voice_uri') || '';
+    } catch {
+      return '';
+    }
+  });
+  const [voiceSpeed, setVoiceSpeed] = useState<number>(0.94);
+  const [isVoicePickerOpen, setIsVoicePickerOpen] = useState<boolean>(false);
+
+  // Initialize and listen to voice readiness
+  useEffect(() => {
+    initializeVoiceEngine((voices) => {
+      setAvailableVoices(voices);
+    });
+    setAvailableVoices(getAvailableVoices());
+  }, []);
+
   const [messages, setMessages] = useState<ChatMessage[]>(() => [
     {
       id: 'msg-welcome',
@@ -75,10 +104,10 @@ export const AIAssistantWidget: React.FC<AIAssistantWidgetProps> = ({
     }
   }, [messages, isOpen, isMinimized]);
 
-  // Clean up speech on unmount
+  // Clean up speech on unmount or close
   useEffect(() => {
     return () => {
-      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      stopSpokenText();
     };
   }, []);
 
@@ -86,44 +115,43 @@ export const AIAssistantWidget: React.FC<AIAssistantWidgetProps> = ({
     // Keep assistant quiet and respectful — no aggressive countdowns
   };
 
-  // Speech Synthesis helper with natural voice selection
+  // High clarity Speech Synthesis helper with phonetic normalization
   const speakText = (text: string, onEnd?: () => void) => {
-    if (!isSpeechEnabled || !('speechSynthesis' in window)) {
+    if (!isSpeechEnabled || typeof window === 'undefined') {
       onEnd?.();
       return;
     }
-    window.speechSynthesis.cancel();
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.96;
-    utterance.pitch = 1.0;
-    utterance.lang = language === 'pcm' ? 'en-NG' : 'en-US';
-
-    // Pick a natural human voice if available in the browser
-    const voices = window.speechSynthesis.getVoices();
-    if (voices && voices.length > 0) {
-      const preferred = voices.find(v => 
-        (language === 'pcm' && (v.lang.includes('NG') || v.lang.includes('GH') || v.lang.includes('ZA'))) ||
-        v.name.includes('Natural') || 
-        v.name.includes('Google') || 
-        v.name.includes('Samantha') || 
-        v.name.includes('Daniel') ||
-        v.name.includes('Karen') ||
-        (v.lang.startsWith('en') && !v.name.includes('Zira') && !v.name.includes('David'))
-      );
-      if (preferred) {
-        utterance.voice = preferred;
+    playSpokenText(
+      text, 
+      language === 'pcm' ? 'pcm' : 'en', 
+      {
+        engineMode: voiceMode,
+        voiceURI: selectedVoiceURI,
+        rate: voiceSpeed,
+        pitch: 0.98,
+        onEnd,
+        onError: () => onEnd?.()
       }
-    }
+    );
+  };
 
-    utterance.onend = () => {
-      onEnd?.();
-    };
-    utterance.onerror = () => {
-      onEnd?.();
-    };
-
-    window.speechSynthesis.speak(utterance);
+  const handleTestVoice = (voiceUriToTest?: string) => {
+    const uri = voiceUriToTest || selectedVoiceURI;
+    const testPhrase = language === 'pcm'
+      ? "How far! Voice don set well well. Ready to assist you for AgriFlow."
+      : "Hello! My voice is clear and ready to assist you on AgriFlow.";
+    
+    playSpokenText(
+      testPhrase,
+      language === 'pcm' ? 'pcm' : 'en',
+      {
+        engineMode: voiceMode,
+        voiceURI: uri,
+        rate: voiceSpeed,
+        pitch: 0.98
+      }
+    );
   };
 
   const executeAction = (action?: AssistantAction): string | undefined => {
@@ -417,6 +445,26 @@ export const AIAssistantWidget: React.FC<AIAssistantWidgetProps> = ({
             <option value="pcm" style={{ color: '#000000' }}>PCM (Pidgin)</option>
           </select>
 
+          {/* Voice Settings Dropdown Toggle */}
+          <button
+            type="button"
+            onClick={() => setIsVoicePickerOpen(!isVoicePickerOpen)}
+            style={{
+              padding: '5px',
+              borderRadius: '6px',
+              backgroundColor: isVoicePickerOpen ? 'rgba(52, 211, 153, 0.3)' : 'transparent',
+              border: 'none',
+              color: isVoicePickerOpen ? '#86efac' : 'rgba(255,255,255,0.7)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+            title="Voice Quality & Sound Tuning"
+          >
+            <Sliders size={16} />
+          </button>
+
           {/* Voice Output Mute/Unmute */}
           <button
             type="button"
@@ -503,6 +551,160 @@ export const AIAssistantWidget: React.FC<AIAssistantWidgetProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Voice Selection & Sound Tuning Drawer */}
+      {isVoicePickerOpen && (
+        <div style={{
+          backgroundColor: '#0f172a',
+          color: '#ffffff',
+          padding: '14px 16px',
+          borderBottom: '1px solid #1e293b',
+          fontSize: '0.82rem',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontWeight: 800, color: '#86efac', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.04em' }}>
+              🎙️ Voice & Pronunciation Engine
+            </span>
+            <button
+              type="button"
+              onClick={() => handleTestVoice()}
+              style={{
+                backgroundColor: 'rgba(52, 211, 153, 0.2)',
+                color: '#86efac',
+                border: '1px solid rgba(52, 211, 153, 0.4)',
+                padding: '3px 8px',
+                borderRadius: '4px',
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              Test Voice
+            </button>
+          </div>
+
+          {/* Voice Mode Selector */}
+          <div>
+            <label style={{ display: 'block', fontSize: '0.72rem', color: '#94a3b8', marginBottom: '6px', fontWeight: 600 }}>
+              Audio Engine Mode
+            </label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setVoiceMode('natural');
+                  try { localStorage.setItem('agriflow_voice_mode', 'natural'); } catch {}
+                }}
+                style={{
+                  padding: '6px 8px',
+                  borderRadius: '6px',
+                  fontSize: '0.74rem',
+                  fontWeight: 700,
+                  border: voiceMode === 'natural' ? '1.5px solid #34d399' : '1px solid #334155',
+                  backgroundColor: voiceMode === 'natural' ? 'rgba(52, 211, 153, 0.2)' : '#1e293b',
+                  color: voiceMode === 'natural' ? '#86efac' : '#94a3b8',
+                  cursor: 'pointer'
+                }}
+              >
+                ✨ Human Studio Voice
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setVoiceMode('browser');
+                  try { localStorage.setItem('agriflow_voice_mode', 'browser'); } catch {}
+                }}
+                style={{
+                  padding: '6px 8px',
+                  borderRadius: '6px',
+                  fontSize: '0.74rem',
+                  fontWeight: 700,
+                  border: voiceMode === 'browser' ? '1.5px solid #34d399' : '1px solid #334155',
+                  backgroundColor: voiceMode === 'browser' ? 'rgba(52, 211, 153, 0.2)' : '#1e293b',
+                  color: voiceMode === 'browser' ? '#86efac' : '#94a3b8',
+                  cursor: 'pointer'
+                }}
+              >
+                💻 Device Synthesizer
+              </button>
+            </div>
+            <div style={{ fontSize: '0.7rem', color: voiceMode === 'natural' ? '#86efac' : '#94a3b8', marginTop: '4px' }}>
+              {voiceMode === 'natural' 
+                ? 'Ultra-smooth studio human voice — zero metallic robotic artifacts.' 
+                : 'Using your operating system local TTS voice.'}
+            </div>
+          </div>
+
+          {voiceMode === 'browser' && (
+            <div>
+              <label style={{ display: 'block', fontSize: '0.72rem', color: '#94a3b8', marginBottom: '4px', fontWeight: 600 }}>
+                Synthesizer Voice ({availableVoices.length} detected)
+              </label>
+              <select
+                value={selectedVoiceURI}
+                onChange={(e) => {
+                  const uri = e.target.value;
+                  setSelectedVoiceURI(uri);
+                  try {
+                    localStorage.setItem('agriflow_voice_uri', uri);
+                  } catch {
+                    // ignore
+                  }
+                  handleTestVoice(uri);
+                }}
+                style={{
+                  width: '100%',
+                  padding: '6px 8px',
+                  borderRadius: '6px',
+                  backgroundColor: '#1e293b',
+                  color: '#ffffff',
+                  border: '1px solid #334155',
+                  fontSize: '0.78rem'
+                }}
+              >
+                <option value="">✨ Best Natural Voice (Automatic)</option>
+                {availableVoices.map((v) => (
+                  <option key={v.voiceURI || v.name} value={v.voiceURI || v.name}>
+                    {v.name} ({v.lang})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 600 }}>Pacing & Speed:</span>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              {[
+                { label: 'Warm 0.88x', val: 0.88 },
+                { label: 'Natural 0.94x', val: 0.94 },
+                { label: 'Brisk 1.05x', val: 1.05 }
+              ].map((s) => (
+                <button
+                  key={s.val}
+                  type="button"
+                  onClick={() => setVoiceSpeed(s.val)}
+                  style={{
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    border: 'none',
+                    cursor: 'pointer',
+                    backgroundColor: voiceSpeed === s.val ? '#10b981' : '#1e293b',
+                    color: voiceSpeed === s.val ? '#ffffff' : '#94a3b8'
+                  }}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Suggested Quick Prompt Chips (NO Admin Button!) */}
       <div style={{

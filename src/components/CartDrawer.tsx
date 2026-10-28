@@ -38,10 +38,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const [confirmedOrder, setConfirmedOrder] = useState<Order | null>(null);
 
   // Form Fields
-  const [customerName, setCustomerName] = useState<string>('Chef Julian Reynolds');
-  const [customerEmail, setCustomerEmail] = useState<string>('julian@heirloomtable.com');
-  const [customerPhone, setCustomerPhone] = useState<string>('+1 (555) 234-5678');
-  const [shippingAddress, setShippingAddress] = useState<string>('442 Orchard Way, Suite B, Portland, OR 97201');
+  const [customerName, setCustomerName] = useState<string>('Mme. Therese Ngo Mbassi');
+  const [customerEmail, setCustomerEmail] = useState<string>('therese.mbassi@baobabcatering.cm');
+  const [customerPhone, setCustomerPhone] = useState<string>('+237 6 77 12 34 56');
+  const [shippingAddress, setShippingAddress] = useState<string>('Avenue du Général de Gaulle, Bonanjo, Douala');
   const [buyerType, setBuyerType] = useState<'consumer' | 'restaurant' | 'grocery' | 'wholesale_distributor'>('restaurant');
 
   if (!isOpen) return null;
@@ -52,15 +52,29 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     return acc + (price * item.quantity);
   }, 0);
 
+  const subtotalXaf = cart.reduce((acc, item) => {
+    const priceXaf = item.tier === 'wholesale' 
+      ? (item.product.wholesalePriceXaf || Math.round(item.product.wholesalePrice * 600))
+      : (item.product.retailPriceXaf || Math.round(item.product.retailPrice * 600));
+    return acc + (priceXaf * item.quantity);
+  }, 0);
+
   const deliveryFee = deliveryMethod === 'cold_chain_express' 
     ? (subtotal > 75 ? 0 : 8.50)
     : (deliveryMethod === 'hub_pickup' ? 3.00 : 0);
+  const deliveryFeeXaf = deliveryMethod === 'cold_chain_express' 
+    ? (subtotalXaf > 45000 ? 0 : 5000)
+    : (deliveryMethod === 'hub_pickup' ? 2000 : 0);
 
   const tipAmount = (subtotal * tipPercentage) / 100;
+  const tipAmountXaf = Math.round((subtotalXaf * tipPercentage) / 100);
+
   const total = subtotal + deliveryFee + tipAmount;
+  const totalXaf = subtotalXaf + deliveryFeeXaf + tipAmountXaf;
 
   // 88.6% direct farmer revenue
   const farmerDirectPayout = subtotal * 0.886;
+  const farmerDirectPayoutXaf = Math.round(subtotalXaf * 0.886);
   const platformFee = subtotal * 0.114;
 
   const handleCheckoutSubmit = (e: React.FormEvent) => {
@@ -185,7 +199,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 </span>
               </div>
               <p style={{ fontSize: '0.82rem', color: 'var(--primary-800)', margin: 0, lineHeight: 1.5 }}>
-                <strong>${confirmedOrder.farmerDirectPayout.toFixed(2)}</strong> (88.6% of produce total) has been credited directly into the escrow accounts of your partner farmers. Zero broker deduction.
+                <strong>{Math.round(confirmedOrder.farmerDirectPayout * 600).toLocaleString()} FCFA (${confirmedOrder.farmerDirectPayout.toFixed(2)})</strong> (88.6% of produce total) has been credited directly into the escrow accounts of your partner farmers. Zero broker deduction.
               </p>
             </div>
 
@@ -335,9 +349,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     onChange={(e) => setDeliverySlot(e.target.value)}
                     className="form-input"
                   >
-                    <option value="Tomorrow 06:00 - 10:00 AM (Early Chilled)">Tomorrow 06:00 - 10:00 AM (Early Chilled)</option>
-                    <option value="Tomorrow 14:00 - 18:00 PM (Afternoon Fresh)">Tomorrow 14:00 - 18:00 PM (Afternoon Fresh)</option>
-                    <option value="Friday Morning Regular Delivery">Friday Morning Regular Delivery</option>
+                    <option value="Tomorrow 06:30 - 09:30 AM (Early Chilled Van)">Tomorrow 06:30 - 09:30 AM (Early Chilled Van)</option>
+                    <option value="Tomorrow 14:00 - 17:30 PM (Afternoon Fresh Delivery)">Tomorrow 14:00 - 17:30 PM (Afternoon Fresh Delivery)</option>
+                    <option value="Weekly Friday Scheduled Cold-Chain Delivery">Weekly Friday Scheduled Cold-Chain Delivery</option>
                   </select>
                 </div>
               </div>
@@ -346,20 +360,20 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               <div style={{ backgroundColor: 'var(--bg-subtle)', borderRadius: 'var(--radius-lg)', padding: '16px', fontSize: '0.85rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                   <span>Produce Subtotal ({cart.length} items):</span>
-                  <strong>${subtotal.toFixed(2)}</strong>
+                  <strong>{subtotalXaf.toLocaleString()} FCFA (${subtotal.toFixed(2)})</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                   <span>Cold-Chain Express Delivery:</span>
-                  <span>{deliveryFee === 0 ? <strong style={{ color: '#059669' }}>FREE</strong> : `$${deliveryFee.toFixed(2)}`}</span>
+                  <span>{deliveryFeeXaf === 0 ? <strong style={{ color: '#059669' }}>FREE</strong> : `${deliveryFeeXaf.toLocaleString()} FCFA ($${deliveryFee.toFixed(2)})`}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                  <span>Farm Worker Tip ({tipPercentage}%):</span>
-                  <span>${tipAmount.toFixed(2)}</span>
+                  <span>Farm Direct Tip ({tipPercentage}%):</span>
+                  <span>{tipAmountXaf.toLocaleString()} FCFA (${tipAmount.toFixed(2)})</span>
                 </div>
                 <div style={{ height: '1px', backgroundColor: 'var(--border-color)', margin: '8px 0' }} />
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', fontWeight: 800 }}>
                   <span>Total Amount:</span>
-                  <span style={{ color: 'var(--primary-900)' }}>${total.toFixed(2)}</span>
+                  <span style={{ color: 'var(--primary-900)' }}>{totalXaf.toLocaleString()} FCFA (~${total.toFixed(2)})</span>
                 </div>
               </div>
 
@@ -408,6 +422,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       const itemPrice = item.tier === 'wholesale' 
                         ? item.product.wholesalePrice 
                         : item.product.retailPrice;
+                      const itemPriceXaf = item.tier === 'wholesale'
+                        ? (item.product.wholesalePriceXaf || Math.round(item.product.wholesalePrice * 600))
+                        : (item.product.retailPriceXaf || Math.round(item.product.retailPrice * 600));
                       const unit = item.tier === 'wholesale' 
                         ? item.product.wholesaleUnit 
                         : item.product.retailUnit;
@@ -437,7 +454,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                                   {item.product.name}
                                 </h4>
                                 <div style={{ fontSize: '0.72rem', color: 'var(--primary-700)', fontWeight: 600 }}>
-                                  {item.product.farmName} • ${itemPrice.toFixed(2)} / {unit}
+                                  {item.product.farmName} • {itemPriceXaf.toLocaleString()} FCFA (${itemPrice.toFixed(2)}) / {unit}
                                 </div>
                               </div>
 
@@ -471,9 +488,14 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                                   </button>
                                 </div>
 
-                                <span style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--primary-900)' }}>
-                                  ${(itemPrice * item.quantity).toFixed(2)}
-                                </span>
+                                <div style={{ textAlign: 'right' }}>
+                                  <div style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--primary-900)' }}>
+                                    {(itemPriceXaf * item.quantity).toLocaleString()} FCFA
+                                  </div>
+                                  <div style={{ fontSize: '0.7rem', color: '#64748b' }}>
+                                    ≈ ${(itemPrice * item.quantity).toFixed(2)}
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -512,7 +534,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Delivered within 24 hours of morning harvest</div>
                           </div>
                         </div>
-                        <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>{subtotal > 75 ? 'FREE' : '$8.50'}</span>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>
+                          {subtotalXaf > 45000 ? <strong style={{ color: '#059669' }}>FREE</strong> : '5,000 FCFA ($8.50)'}
+                        </span>
                       </label>
 
                       <label style={{ 
@@ -537,7 +561,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Collect anytime from temperature-controlled locker</div>
                           </div>
                         </div>
-                        <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>$3.00</span>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>1,800 FCFA ($3.00)</span>
                       </label>
                     </div>
                   </div>
@@ -595,14 +619,17 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     marginBottom: '12px'
                   }}>
                     <ShieldCheck size={16} />
-                    <span><strong>${farmerDirectPayout.toFixed(2)}</strong> goes directly to your partner farms.</span>
+                    <span><strong>{farmerDirectPayoutXaf.toLocaleString()} FCFA (~${farmerDirectPayout.toFixed(2)})</strong> goes directly to your partner farms.</span>
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '14px' }}>
                     <div>
                       <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Estimated Total</span>
-                      <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary-950)', fontFamily: 'var(--font-heading)' }}>
-                        ${total.toFixed(2)}
+                      <div style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--primary-950)', fontFamily: 'var(--font-heading)' }}>
+                        {totalXaf.toLocaleString()} FCFA
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                        ≈ ${total.toFixed(2)} USD
                       </div>
                     </div>
 
