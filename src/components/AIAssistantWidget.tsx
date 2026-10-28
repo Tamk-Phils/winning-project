@@ -10,8 +10,7 @@ import {
   Minus, 
   CheckCircle2, 
   RotateCcw,
-  Bot,
-  AlertCircle
+  Bot
 } from 'lucide-react';
 import type { AppView, VoiceLanguage, Product, DemandOpportunity } from '../types';
 import { askAgriFlowAssistant, detectActionFromMessage, type AssistantAction } from '../lib/aiAssistant';
@@ -58,17 +57,11 @@ export const AIAssistantWidget: React.FC<AIAssistantWidgetProps> = ({
   const [inputText, setInputText] = useState<string>('');
   const [isThinking, setIsThinking] = useState<boolean>(false);
 
-  // Inactivity / Liveness check state
-  const [showLivenessPrompt, setShowLivenessPrompt] = useState<boolean>(false);
-  const [livenessSecondsLeft, setLivenessSecondsLeft] = useState<number>(3);
-  const inactivityTimerRef = useRef<number | null>(null);
-  const countdownTimerRef = useRef<number | null>(null);
-
   const [messages, setMessages] = useState<ChatMessage[]>(() => [
     {
       id: 'msg-welcome',
       sender: 'assistant',
-      text: "Hello! I am your AgriFlow AI Copilot. Ask me farming questions, or tell me to 'open supplier dashboard', 'open services', or 'find buyer demands' and I will navigate in the background.",
+      text: "Hey there! How can I help you today? Ask me about crop prices, farming advice, or tell me where you'd like to head — like the marketplace, services, or buyer requests.",
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
@@ -82,54 +75,18 @@ export const AIAssistantWidget: React.FC<AIAssistantWidgetProps> = ({
     }
   }, [messages, isOpen, isMinimized]);
 
-  // Clean up all liveness timers on unmount
+  // Clean up speech on unmount
   useEffect(() => {
     return () => {
-      if (inactivityTimerRef.current) window.clearTimeout(inactivityTimerRef.current);
-      if (countdownTimerRef.current) window.clearInterval(countdownTimerRef.current);
       if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     };
   }, []);
 
   const resetLivenessTimers = () => {
-    if (inactivityTimerRef.current) {
-      window.clearTimeout(inactivityTimerRef.current);
-      inactivityTimerRef.current = null;
-    }
-    if (countdownTimerRef.current) {
-      window.clearInterval(countdownTimerRef.current);
-      countdownTimerRef.current = null;
-    }
-    setShowLivenessPrompt(false);
-    setLivenessSecondsLeft(3);
+    // Keep assistant quiet and respectful — no aggressive countdowns
   };
 
-  const scheduleLivenessCheck = () => {
-    resetLivenessTimers();
-    // After 6 seconds of inactivity, prompt the user
-    inactivityTimerRef.current = window.setTimeout(() => {
-      setShowLivenessPrompt(true);
-      setLivenessSecondsLeft(3);
-      speakText("Are you still available to continue the chat?");
-
-      let remaining = 3;
-      countdownTimerRef.current = window.setInterval(() => {
-        remaining -= 1;
-        setLivenessSecondsLeft(remaining);
-        if (remaining <= 0) {
-          if (countdownTimerRef.current) {
-            window.clearInterval(countdownTimerRef.current);
-            countdownTimerRef.current = null;
-          }
-          setShowLivenessPrompt(false);
-          setIsListening(false);
-          // Assistant remains docked and quiet on the page
-        }
-      }, 1000);
-    }, 6000);
-  };
-
-  // Speech Synthesis helper
+  // Speech Synthesis helper with natural voice selection
   const speakText = (text: string, onEnd?: () => void) => {
     if (!isSpeechEnabled || !('speechSynthesis' in window)) {
       onEnd?.();
@@ -138,9 +95,26 @@ export const AIAssistantWidget: React.FC<AIAssistantWidgetProps> = ({
     window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 1.0;
+    utterance.rate = 0.96;
     utterance.pitch = 1.0;
     utterance.lang = language === 'pcm' ? 'en-NG' : 'en-US';
+
+    // Pick a natural human voice if available in the browser
+    const voices = window.speechSynthesis.getVoices();
+    if (voices && voices.length > 0) {
+      const preferred = voices.find(v => 
+        (language === 'pcm' && (v.lang.includes('NG') || v.lang.includes('GH') || v.lang.includes('ZA'))) ||
+        v.name.includes('Natural') || 
+        v.name.includes('Google') || 
+        v.name.includes('Samantha') || 
+        v.name.includes('Daniel') ||
+        v.name.includes('Karen') ||
+        (v.lang.startsWith('en') && !v.name.includes('Zira') && !v.name.includes('David'))
+      );
+      if (preferred) {
+        utterance.voice = preferred;
+      }
+    }
 
     utterance.onend = () => {
       onEnd?.();
@@ -234,12 +208,12 @@ export const AIAssistantWidget: React.FC<AIAssistantWidgetProps> = ({
 
       setMessages(prev => [...prev, assistantMsg]);
       
-      // Speak aloud and start liveness timer when speech concludes
-      speakText(response.message, () => {
-        scheduleLivenessCheck();
-      });
+      // Speak aloud in a natural cadence
+      speakText(response.message);
     } catch {
-      const fallbackText = "I am ready to assist. You can ask me to open services, supplier portal, or marketplace, or check crop prices.";
+      const fallbackText = language === 'pcm'
+        ? "I dey right here! Wetin you wan make we check — prices, tractor bookings, or current market demands?"
+        : "I'm right here! Feel free to ask about crop prices, booking services, or current buyer requests.";
       const errorMsg: ChatMessage = {
         id: `msg-err-${Date.now()}`,
         sender: 'assistant',
@@ -248,9 +222,7 @@ export const AIAssistantWidget: React.FC<AIAssistantWidgetProps> = ({
         actionExecuted: executedLabel
       };
       setMessages(prev => [...prev, errorMsg]);
-      speakText(fallbackText, () => {
-        scheduleLivenessCheck();
-      });
+      speakText(fallbackText);
     } finally {
       setIsThinking(false);
     }
@@ -301,8 +273,8 @@ export const AIAssistantWidget: React.FC<AIAssistantWidgetProps> = ({
         id: `msg-welcome-${Date.now()}`,
         sender: 'assistant',
         text: language === 'pcm'
-          ? "A beg! I be your AgriFlow AI Copilot. Wetin you wan make I open or check for market today?"
-          : "Hello! What page would you like me to open, or what farming questions can I help you with?",
+          ? "How far! Wetin you wan make we check for market or farming today?"
+          : "Hey! What would you like to check out or do next?",
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }
     ]);
@@ -344,7 +316,7 @@ export const AIAssistantWidget: React.FC<AIAssistantWidgetProps> = ({
           }}
         >
           <Sparkles size={17} color="#86efac" />
-          <span>AgriFlow Copilot</span>
+          <span>AgriFlow Assistant</span>
           <span style={{
             width: '8px',
             height: '8px',
@@ -412,10 +384,10 @@ export const AIAssistantWidget: React.FC<AIAssistantWidgetProps> = ({
           </div>
           <div>
             <div style={{ fontSize: '0.92rem', fontWeight: 800, fontFamily: 'var(--font-heading)' }}>
-              AgriFlow Copilot
+              AgriFlow Assistant
             </div>
             <div style={{ fontSize: '0.68rem', color: '#86efac', fontWeight: 600 }}>
-              Background Voice & Navigator
+              Farming & Market Partner
             </div>
           </div>
         </div>
@@ -571,45 +543,6 @@ export const AIAssistantWidget: React.FC<AIAssistantWidgetProps> = ({
         ))}
       </div>
 
-      {/* Inactivity Liveness Banner */}
-      {showLivenessPrompt && (
-        <div style={{
-          backgroundColor: '#fef3c7',
-          borderBottom: '1px solid #fde68a',
-          padding: '8px 14px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          fontSize: '0.78rem',
-          color: '#92400e',
-          animation: 'fadeIn 0.2s ease'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <AlertCircle size={15} color="#b45309" />
-            <span><strong>Are you still available?</strong> (Stopping in {livenessSecondsLeft}s)</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              resetLivenessTimers();
-              speakText("I am listening! What would you like to explore?");
-            }}
-            style={{
-              backgroundColor: '#b45309',
-              color: '#ffffff',
-              border: 'none',
-              padding: '3px 8px',
-              borderRadius: '4px',
-              fontWeight: 700,
-              fontSize: '0.72rem',
-              cursor: 'pointer'
-            }}
-          >
-            Yes, I'm here
-          </button>
-        </div>
-      )}
-
       {/* Messages Scroll Area */}
       <div style={{
         flex: 1,
@@ -685,7 +618,7 @@ export const AIAssistantWidget: React.FC<AIAssistantWidgetProps> = ({
             color: 'var(--text-muted)'
           }}>
             <Sparkles size={14} className="animate-spin" color="var(--primary-600)" />
-            <span>Executing in background...</span>
+            <span>Thinking...</span>
           </div>
         )}
 
@@ -731,7 +664,7 @@ export const AIAssistantWidget: React.FC<AIAssistantWidgetProps> = ({
 
         <input
           type="text"
-          placeholder={language === 'pcm' ? "Type command or wetin you need..." : "Ask questions or say 'open supplier portal'..."}
+          placeholder={language === 'pcm' ? "Ask question or tell me wetin you need..." : "Ask a question or tell me where you'd like to go..."}
           value={inputText}
           onChange={(e) => {
             setInputText(e.target.value);

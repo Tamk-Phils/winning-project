@@ -46,8 +46,8 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       const greeting = language === 'pcm'
-        ? "A beg, welcome for AgriFlow Voice Assistant! I fit help you check buyer dem wey dey find your crop, list new harvest, or navigate di market. Wetin you wan do today?"
-        : "Welcome to the AgriFlow Voice Assistant! I can help you search active buyer requests, list new produce, or read your matches aloud. What would you like to do?";
+        ? "How far! Welcome. You dey look for buyers, wan put harvest for market, or check wetin dey happen? How I fit help you today?"
+        : "Hey there, welcome! Looking for buyers, want to list fresh produce, or need help finding something? What's on your mind?";
       
       setAssistantResponse(greeting);
       speakText(greeting);
@@ -60,11 +60,27 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
     window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.95;
+    utterance.rate = 0.96;
     utterance.pitch = 1.0;
     
     // Choose appropriate voice or English fallback
     utterance.lang = language === 'pcm' ? 'en-NG' : 'en-US';
+
+    const voices = window.speechSynthesis.getVoices();
+    if (voices && voices.length > 0) {
+      const preferred = voices.find(v => 
+        (language === 'pcm' && (v.lang.includes('NG') || v.lang.includes('GH') || v.lang.includes('ZA'))) ||
+        v.name.includes('Natural') || 
+        v.name.includes('Google') || 
+        v.name.includes('Samantha') || 
+        v.name.includes('Daniel') ||
+        v.name.includes('Karen') ||
+        (v.lang.startsWith('en') && !v.name.includes('Zira') && !v.name.includes('David'))
+      );
+      if (preferred) {
+        utterance.voice = preferred;
+      }
+    }
 
     utterance.onstart = () => setIsSpeaking(true);
     utterance.onend = () => setIsSpeaking(false);
@@ -92,8 +108,8 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
 
     if (!SpeechRecognition) {
       const fallbackMsg = language === 'pcm'
-        ? "Your browser no support microphone speech recognition directly. Click any of di quick voice buttons below make we talk!"
-        : "Speech recognition is not supported in this browser. Please use the quick action buttons below.";
+        ? "Your browser no support microphone speech recognition directly. Click any of di quick buttons below make we talk!"
+        : "Speech recognition isn't supported in this browser. Please use the quick buttons below.";
       setAssistantResponse(fallbackMsg);
       speakText(fallbackMsg);
       return;
@@ -139,8 +155,8 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
     // 1. Search Buyer Requests / Demand Radar
     if (text.includes('buyer') || text.includes('demand') || text.includes('find market') || text.includes('order')) {
       const resp = language === 'pcm'
-        ? `I don check Demand Radar. We get ${opportunities.length} verified buyer request from connected records right now. You wan go see dem?`
-        : `I checked the Demand Radar. There are currently ${opportunities.length} verified buyer requests from connected records. Would you like me to open the Demand Radar?`;
+        ? `Check out Demand Radar! We get ${opportunities.length} active buyer requests open right now. You wan make I open di page for you?`
+        : `Sure thing! Right now there are ${opportunities.length} active buyer requests on the radar. Want me to open that up for you?`;
       
       setAssistantResponse(resp);
       speakText(resp);
@@ -158,8 +174,8 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
     // 2. List Harvest / Sell Produce
     if (text.includes('sell') || text.includes('list') || text.includes('plantain') || text.includes('harvest') || text.includes('produce')) {
       const resp = language === 'pcm'
-        ? "Correct! Make I prepare to put your harvest for market. I fit add 500kg of Green Plantains at 400 FCFA per kilo for your farm listing. Confirm below if you agree make I publish am."
-        : "Great! I can prepare a produce batch listing for you. I propose listing 500kg of Fresh Green Plantains at 400 FCFA/kg under your cooperative profile. Please confirm below to publish.";
+        ? "No wahala! I fit help you set up di batch — like 500kg of Fresh Green Plantains at 400 FCFA per kilo. Check am below and click make we publish am."
+        : "Sounds good! I can get that batch ready for you — let's say 500kg of Fresh Green Plantains at 400 FCFA per kilo. Take a quick look below and confirm to publish.";
 
       setAssistantResponse(resp);
       speakText(resp);
@@ -182,8 +198,8 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
     // 3. Live Chat / Messages
     if (text.includes('message') || text.includes('chat') || text.includes('inbox') || text.includes('talk')) {
       const resp = language === 'pcm'
-        ? `You get ${unreadNotificationCount} unread notification${unreadNotificationCount === 1 ? '' : 's'} from connected records. You wan open Live Chat now?`
-        : `You have ${unreadNotificationCount} unread notification${unreadNotificationCount === 1 ? '' : 's'} from connected records. Would you like to open the live chat?`;
+        ? `You get ${unreadNotificationCount} new message${unreadNotificationCount === 1 ? '' : 's'} waiting for you. You wan make we open live chat?`
+        : `You've got ${unreadNotificationCount} new message${unreadNotificationCount === 1 ? '' : 's'} waiting for you. Want me to take you to live chat?`;
 
       setAssistantResponse(resp);
       speakText(resp);
@@ -198,11 +214,6 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
       return;
     }
 
-    // 4. Fallback
-    const fallback = language === 'pcm'
-      ? `I hear you say: "${command}". Wetin you wan do? You fit say "Find buyers", "Sell plantain", or "Open messages".`
-      : `I understood: "${command}". Would you like to search buyers, list produce, or view your live messages?`;
-
     setIsAssistantThinking(true);
     try {
       const response = await askAgriFlowAssistant({
@@ -216,10 +227,12 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
       });
       setAssistantResponse(response.message);
       speakText(response.message);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'AI assistant is unavailable.';
-      setAssistantResponse(`${fallback} (${message})`);
-      speakText(fallback);
+    } catch {
+      const friendlyError = language === 'pcm'
+        ? "Network small slow, but I dey right here! Wetin you wan check?"
+        : "I had a little trouble getting that just now, but I'm right here. What would you like to check out?";
+      setAssistantResponse(friendlyError);
+      speakText(friendlyError);
     } finally {
       setIsAssistantThinking(false);
     }
@@ -423,7 +436,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
             )}
           </div>
           <p style={{ margin: 0, fontWeight: 500 }}>
-            {isAssistantThinking ? 'Connecting to the AgriFlow AI assistant...' : assistantResponse}
+            {isAssistantThinking ? 'Thinking...' : assistantResponse}
           </p>
         </div>
 

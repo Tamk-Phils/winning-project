@@ -723,10 +723,10 @@ export function App() {
               fontSize: '0.88rem',
               transition: 'all 0.2s ease'
             }}
-            title="AgriFlow AI Copilot (Background Voice Assistant)"
+            title="AgriFlow Assistant (Voice & Chat)"
           >
             <Sparkles size={18} color="#86efac" />
-            <span>AgriFlow Copilot</span>
+            <span>AgriFlow Assistant</span>
             <span style={{
               width: '8px',
               height: '8px',

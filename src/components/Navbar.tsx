@@ -419,7 +419,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   }}
                 >
                   <Sparkles size={15} color="#86efac" />
-                  <span>AI Copilot</span>
+                  <span>Assistant</span>
                 </button>
               )}
 

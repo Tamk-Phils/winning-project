@@ -134,59 +134,59 @@ export async function askAgriFlowAssistant(request: AssistantRequest): Promise<A
 
   if (action?.type === 'block_admin') {
     replyText = isPcm
-      ? "Assistant no fit open di Admin Portal. Admin access dey restricted for security reasons. Type /admin directly for your browser address bar."
-      : "Access to the Admin Portal is strictly restricted and cannot be opened via the AI assistant. Please type /admin directly in your browser address bar.";
+      ? "Ah, I no get permission to open di Admin Portal from here. For security, make you just type /admin directly for your browser address bar."
+      : "I can't open the admin portal from here for security reasons. You can get straight to it by typing /admin into your browser's address bar.";
   } else if (action?.type === 'navigate') {
     if (action.target === 'services') {
       replyText = isPcm
-        ? "I don switch to di Service Booking Hub. You fit browse certified agronomists, heavy tractor operators, spray drone pilots, or register your own service profile!"
-        : "Opened the Agricultural Service Booking Hub for you. You can browse certified agronomists, tractor tillage contractors, spray drone pilots, and refrigerated cold-chain haulers.";
+        ? "Here is di Service Hub! You fit find tractor operators, soil specialists, drone sprayers, and cold trucks here."
+        : "Here's the Service Hub! You'll find tractor operators, agronomists, drone pilots, and transport trucks listed here.";
     } else if (action.target === 'marketplace') {
       replyText = isPcm
-        ? `I don carry you go Marketplace! We get ${request.context.productCount || 8} verified farm harvest batches wey ready for order.`
-        : `Opened the Produce Marketplace. There are currently ${request.context.productCount || 8} fresh harvest batches available directly from certified regenerative growers.`;
+        ? `Welcome to di marketplace! We get about ${request.context.productCount || 8} fresh harvest batches ready for order right now.`
+        : `Here's the marketplace! We've got ${request.context.productCount || 8} fresh batches ready from local farms right now.`;
     } else if (action.target === 'demand_radar') {
       replyText = isPcm
-        ? `Demand Radar opened! We get ${request.context.opportunityCount || 12} active buyer request and commercial RFQ wey you fit supply.`
-        : `Switched to Demand Radar. Currently tracking ${request.context.opportunityCount || 12} verified buyer contracts, hotel tenders, and international export RFQs.`;
+        ? `Check out Demand Radar! We get ${request.context.opportunityCount || 12} active buyer requests and tenders open today.`
+        : `Here's the Demand Radar. There are ${request.context.opportunityCount || 12} buyer requests and tenders open right now.`;
     } else if (action.target === 'farmer_portal') {
       replyText = isPcm
-        ? "Farmer Portal opened. You fit add new harvest batch, check price trends, or review incoming wholesale inquiries."
-        : "Navigated to the Farmer Command Hub. Here you can publish new harvest batches, monitor cold storage telemetry, and review direct buyer bids.";
+        ? "Here be your farmer portal! You fit post a new harvest batch, check your cold storage, or see who wan buy from you."
+        : "Here's your farmer portal! You can list a new batch, check on your storage, or see incoming buyer bids.";
     } else {
       replyText = isPcm
-        ? `I don navigate to ${action.label} in di background for you!`
-        : `Navigated to ${action.label} in the background.`;
+        ? `No wahala, I don take you go ${action.label}!`
+        : `Sure thing! Taking you over to ${action.label} now.`;
     }
   } else if (action?.type === 'open_cart') {
     replyText = isPcm
-      ? "I don open your cart drawer make you see your items and proceed to escrow checkout."
-      : "Opened your shopping cart drawer. You can review items, select delivery preferences, and proceed to escrow checkout.";
+      ? "Here is your cart! Check your items make sure everything correct before you checkout."
+      : "Here's your cart! You can review what you've picked and head to checkout when you're ready.";
   } else if (action?.type === 'open_notifications') {
     replyText = isPcm
-      ? `You get ${request.context.unreadNotificationCount || 0} unread notification dem. I don open di notification panel for you.`
-      : `You have ${request.context.unreadNotificationCount || 0} unread notifications. Opened the notification drawer for you.`;
+      ? `You get ${request.context.unreadNotificationCount || 0} new alert${request.context.unreadNotificationCount === 1 ? '' : 's'}. Make I open dem for you.`
+      : `You have ${request.context.unreadNotificationCount || 0} unread notification${request.context.unreadNotificationCount === 1 ? '' : 's'}. Opening them up for you now.`;
   } else if (lower.includes('price') || lower.includes('cost') || lower.includes('how much')) {
     replyText = isPcm
-      ? "Market prices for AgriFlow dey follow direct farmer rates: Giant French Horn Plantains dey around 400 - 450 FCFA/kg, Penja White Pepper Grade A+ dey 24,000 FCFA/kg, and Foumbot Plum Tomatoes dey 450 FCFA/kg. You wan make I open di marketplace?"
-      : "Current benchmark rates on AgriFlow: Fresh French Horn Plantains at 400-450 FCFA/kg, authentic PGI Penja White Pepper at 24,000 FCFA/kg, and Volcanic Plum Tomatoes at 450 FCFA/kg. Direct farm-gate payouts average 88.6%. Would you like me to open the marketplace?";
+      ? "Plantains dey go around 400 to 450 FCFA per kilo, Penja white pepper is roughly 24,000 FCFA/kg, and plum tomatoes dey about 450 FCFA/kg. Farmers dey keep about 88% of di sale directly. You wan make I open di market for you?"
+      : "Plantains are currently going for around 400 to 450 FCFA/kg, Penja white pepper is about 24,000 FCFA/kg, and plum tomatoes are at 450 FCFA/kg. Farmers take home about 88% directly. Want me to open the marketplace?";
   } else if (lower.includes('tractor') || lower.includes('plough') || lower.includes('tillage') || lower.includes('service')) {
     replyText = isPcm
-      ? "For tractor and tillage services, Jean-Luc Ngassa dey provide John Deere 75HP tractor with deep disc plough at 45,000 FCFA per hectare in West region. You fit book am directly for our Service Hub!"
-      : "For heavy mechanization, verified contractor Jean-Luc Ngassa provides 75HP 4WD tractor tillage and disc ploughing at 45,000 FCFA/hectare. You can book an available date slot in our Service Hub.";
+      ? "If you need tractor work, Jean-Luc Ngassa get a strong 75HP John Deere tractor for tillage at 45,000 FCFA per hectare in West region. You fit book a date with him straight from our Service Hub!"
+      : "For tractor work, Jean-Luc Ngassa has a 75HP tractor with a disc plough available at 45,000 FCFA per hectare in the West region. You can book an open date slot with him in the Service Hub.";
   } else if (lower.includes('pest') || lower.includes('disease') || lower.includes('fungus') || lower.includes('fertilizer')) {
     replyText = isPcm
-      ? "For organic pest control, you fit spray cold-pressed neem oil (5ml per liter water with mild potassium soap) or fermented compost tea. Make you avoid synthetic organophosphates if you wan sell for export grade!"
-      : "For regenerative pest management: apply cold-pressed neem oil emulsified with mild liquid castile soap (5ml/L water) in early morning or dusk, or apply Bacillus thuringiensis (Bt) for caterpillars. Dr. Jean-Paul Mvogo is also available for in-field soil & pest consultations in our Service Hub.";
+      ? "For bugs or pests, spray some cold-pressed neem oil mixed with small mild soap and water (like 5ml per liter) early in the morning or when sun go down so leaves no go burn. For worms or caterpillars, Bt powder dey work well. If you need someone to inspect your farm, Dr. Jean-Paul Mvogo dey available for our Service Hub."
+      : "For natural pest control, spray cold-pressed neem oil mixed with a little mild liquid soap and water (about 5ml per liter) early in the morning or at dusk so the sun doesn't scorch the leaves. For caterpillars, Bt works great. If you want an expert to check your fields in person, Dr. Jean-Paul Mvogo is available in our Service Hub.";
   } else {
     replyText = isPcm
-      ? `I hear you clearly: "${request.message}". As your AgriFlow AI Copilot, I fit help you check buyer requests, book tractors or agronomists, open pages for you, or find fresh harvest. Wetin you need?`
-      : `I understood: "${request.message}". As your AgriFlow Copilot, I can navigate pages instantly, help you book field specialists, check active buyer demands, or verify harvest pricing. What would you like to explore next?`;
+      ? "I dey hear you! Whether you wan check crop prices, find buyers, or get someone to help with tractor work, I dey here. Wetin we go look first?"
+      : "Got it! Whether you're checking crop prices, looking for buyers, or booking a tractor for your fields, I can help you out. What's on your mind?";
   }
 
   return {
     message: replyText,
-    provider: 'agriflow-copilot',
+    provider: 'agriflow-assistant',
     action
   };
 }
