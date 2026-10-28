@@ -20,7 +20,7 @@ export const Footer: React.FC<FooterProps> = ({
   onNavigate,
   onOpenFarmerPortal,
   onOpenRFQ,
-  onOpenSupabase,
+  onOpenSupabase: _onOpenSupabase,
 }) => {
   return (
     <footer style={{ backgroundColor: 'var(--primary-950)', color: '#ffffff', paddingTop: '64px', paddingBottom: '40px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
@@ -86,7 +86,7 @@ export const Footer: React.FC<FooterProps> = ({
             </ul>
           </div>
 
-          {/* Agribusiness Services */}
+          {/* Agribusiness Rails */}
           <div>
             <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '18px' }}>
               Agribusiness Rails
@@ -99,39 +99,21 @@ export const Footer: React.FC<FooterProps> = ({
                 </button>
               </li>
               <li>
-                <button onClick={() => onNavigate('onboarding')} style={{ color: '#34d399', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
-                  <span>Sell on AgriFlow (Farmer Onboarding)</span>
-                  <ArrowUpRight size={13} />
+                <button onClick={() => onNavigate('services')} style={{ color: '#34d399', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+                  <span>Agricultural Services Hub</span>
+                  <ArrowUpRight size={13} color="#34d399" />
                 </button>
               </li>
               <li>
-                <button onClick={() => onNavigate('logistics')} style={{ color: '#ffffff', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
-                  <span>Cold-Chain IoT Hubs & Fleet</span>
+                <button onClick={() => onNavigate('onboarding')} style={{ color: '#a7f3d0', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+                  <span>Sell on AgriFlow</span>
                   <ArrowUpRight size={13} />
                 </button>
               </li>
               <li>
                 <button onClick={() => onNavigate('orders')} style={{ color: '#a7f3d0', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
-                  <span>Live Dispatch Telemetry Tracker</span>
+                  <span>Track Dispatches & Escrow</span>
                   <ArrowUpRight size={13} />
-                </button>
-              </li>
-              <li>
-                <button onClick={() => onNavigate('services')} style={{ color: '#34d399', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
-                  <span>Service Booking Hub (Specialists)</span>
-                  <ArrowUpRight size={13} color="#34d399" />
-                </button>
-              </li>
-              <li>
-                <button onClick={() => onNavigate('impact')} style={{ color: '#a7f3d0', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
-                  <span>Soil Health & Impact Report</span>
-                  <ArrowUpRight size={13} />
-                </button>
-              </li>
-              <li>
-                <button onClick={() => onNavigate('admin_dashboard')} style={{ color: '#fca5a5', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
-                  <span>Security & Admin Dashboard</span>
-                  <ArrowUpRight size={13} color="#fca5a5" />
                 </button>
               </li>
               <li>
@@ -140,16 +122,10 @@ export const Footer: React.FC<FooterProps> = ({
                   <ArrowUpRight size={13} />
                 </button>
               </li>
-              <li>
-                <button onClick={onOpenSupabase} style={{ color: '#34d399', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px', cursor: 'pointer' }}>
-                  <span>Supabase Database Schema</span>
-                  <ArrowUpRight size={12} />
-                </button>
-              </li>
             </ul>
           </div>
 
-          {/* Agrilogistics Headquarters */}
+          {/* Regional Agro-Clearing Hub */}
           <div>
             <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '18px' }}>
               Agro-Clearing Hub
@@ -157,15 +133,15 @@ export const Footer: React.FC<FooterProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.86rem', color: '#a7f3d0' }}>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
                 <MapPin size={16} color="#34d399" style={{ marginTop: '3px', flexShrink: 0 }} />
-                <span>Pacific Agri-Hub, 800 Orchard Way, Hood River Basin, OR 97031</span>
+                <span>Highland Agro-Terminal, Foumbot Basin, West Region, Cameroon</span>
               </div>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <Phone size={16} color="#34d399" style={{ flexShrink: 0 }} />
-                <span>+1 (800) 555-FARM (3276)</span>
+                <span>+237 670 00 12 34</span>
               </div>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <Mail size={16} color="#34d399" style={{ flexShrink: 0 }} />
-                <span>harvest@agriflow-market.com</span>
+                <span>support@agriflow-cameroon.com</span>
               </div>
             </div>
           </div>

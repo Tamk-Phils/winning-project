@@ -2,19 +2,24 @@ import React, { useState } from 'react';
 import type { 
   Product, 
   ProductCategory, 
-  Farm 
+  Farm,
+  ServiceProvider
 } from '../types';
 import { ProductCard } from './ProductCard';
 import { 
   ArrowUpDown, 
   Building2, 
   Calendar, 
-  Package 
+  Package,
+  Wrench,
+  Star,
+  ArrowRight
 } from 'lucide-react';
 
 interface MarketplaceViewProps {
   products: Product[];
   farms: Farm[];
+  serviceProviders?: ServiceProvider[];
   activeCategory: ProductCategory;
   setActiveCategory: (category: ProductCategory) => void;
   searchQuery: string;
@@ -23,12 +28,15 @@ interface MarketplaceViewProps {
   onAddToCart: (product: Product, quantity: number, tier: 'retail' | 'wholesale') => void;
   onSelectProduct: (product: Product) => void;
   onSelectFarm: (farmId: string) => void;
+  onSelectProvider?: (providerId: string) => void;
+  onNavigateServices?: () => void;
   onOpenRFQ: () => void;
 }
 
 export const MarketplaceView: React.FC<MarketplaceViewProps> = ({
   products,
   farms,
+  serviceProviders = [],
   activeCategory,
   setActiveCategory,
   searchQuery,
@@ -37,6 +45,8 @@ export const MarketplaceView: React.FC<MarketplaceViewProps> = ({
   onAddToCart,
   onSelectProduct,
   onSelectFarm,
+  onSelectProvider,
+  onNavigateServices,
   onOpenRFQ,
 }) => {
   const [organicOnly, setOrganicOnly] = useState<boolean>(false);
@@ -317,6 +327,113 @@ export const MarketplaceView: React.FC<MarketplaceViewProps> = ({
             >
               Reset All Filters
             </button>
+          </div>
+        )}
+
+        {/* Essential Agricultural Services & Machinery Section */}
+        {serviceProviders && serviceProviders.length > 0 && (
+          <div style={{ marginTop: '64px', borderTop: '1px solid #e2e8f0', paddingTop: '48px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+              <div>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: '#f0fdf4', color: '#166534', padding: '3px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700, marginBottom: '6px' }}>
+                  <Wrench size={13} />
+                  <span>On-Demand Field Machinery & Agronomy</span>
+                </div>
+                <h3 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>
+                  Essential Agricultural Services
+                </h3>
+                <p style={{ fontSize: '0.88rem', color: '#64748b', margin: '4px 0 0' }}>
+                  Hire verified tractor operators, drone sprayers, soil diagnostics labs, and cold storage haulers alongside your produce orders.
+                </p>
+              </div>
+
+              {onNavigateServices && (
+                <button
+                  type="button"
+                  onClick={onNavigateServices}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    backgroundColor: '#0f172a',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '9px 16px',
+                    fontSize: '0.84rem',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                >
+                  <span>Explore All Services</span>
+                  <ArrowRight size={15} />
+                </button>
+              )}
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+              {serviceProviders.slice(0, 4).map((sp) => (
+                <div
+                  key={sp.id}
+                  onClick={() => onSelectProvider?.(sp.id)}
+                  style={{
+                    backgroundColor: '#ffffff',
+                    borderRadius: '12px',
+                    border: '1px solid #e2e8f0',
+                    padding: '20px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    transition: 'border-color 0.15s ease, transform 0.15s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#166534';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = '#e2e8f0';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
+                    <img
+                      src={sp.avatarUrl}
+                      alt={sp.fullName}
+                      style={{ width: '48px', height: '48px', borderRadius: '10px', objectFit: 'cover' }}
+                    />
+                    <div>
+                      <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#166534', textTransform: 'uppercase' }}>
+                        {sp.category.replace('_', ' ')}
+                      </div>
+                      <h4 style={{ fontSize: '0.98rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                        {sp.fullName}
+                      </h4>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem', color: '#64748b' }}>
+                        <Star size={12} color="#eab308" fill="#eab308" />
+                        <strong>{sp.rating.toFixed(2)}</strong> ({sp.reviewCount} reviews)
+                      </div>
+                    </div>
+                  </div>
+
+                  <p style={{ fontSize: '0.82rem', color: '#475569', margin: '0 0 14px', lineClamp: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    {sp.bio}
+                  </p>
+
+                  <div style={{ marginTop: 'auto', paddingTop: '12px', borderTop: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div>
+                      <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Starting from</span>
+                      <div style={{ fontSize: '0.96rem', fontWeight: 800, color: '#0f172a' }}>
+                        {sp.startingPriceXaf.toLocaleString()} FCFA
+                      </div>
+                    </div>
+                    <span style={{ fontSize: '0.78rem', color: '#166534', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span>View & Book</span>
+                      <ArrowRight size={13} />
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

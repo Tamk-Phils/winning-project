@@ -32,7 +32,28 @@ export type AppView =
   | 'impact'
   | 'demand_radar'
   | 'live_chat'
-  | 'admin_dashboard';
+  | 'admin_dashboard'
+  | 'supplier_profile'
+  | 'provider_profile';
+
+export type UserRole = 'supplier' | 'service_renderer' | 'buyer' | 'admin';
+
+export interface PlatformUser {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  role: UserRole;
+  businessName?: string;
+  location: string;
+  region: string;
+  avatarUrl: string;
+  verified: boolean;
+  status: 'active' | 'suspended' | 'pending';
+  joinedDate: string;
+  linkedEntityId?: string; // farmId if supplier, providerId if service_renderer
+  notes?: string;
+}
 
 
 export type GeographicRegion = 

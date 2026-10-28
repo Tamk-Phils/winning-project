@@ -67,108 +67,128 @@ export function getSupabase(): SupabaseClient | null {
 // API REPOSITORIES (Live Supabase with Zero Mock Data)
 // -------------------------------------------------------------
 
+import { 
+  getStoredFarms, 
+  saveFarmToStore, 
+  getStoredProducts, 
+  saveProductToStore, 
+  deleteProductFromStore, 
+  getStoredOrders, 
+  saveOrderToStore 
+} from './agriflowStore';
+
 export async function fetchFarms(): Promise<Farm[]> {
   const sb = getSupabase();
-  if (!sb) return [];
-  try {
-    const { data, error } = await sb.from('farms').select('*');
-    if (error) throw error;
-    return (data || []) as Farm[];
-  } catch (err) {
-    console.warn('Supabase fetchFarms error:', err);
-    return [];
+  if (sb) {
+    try {
+      const { data, error } = await sb.from('farms').select('*');
+      if (!error && data && data.length > 0) {
+        return data as Farm[];
+      }
+    } catch (err) {
+      console.warn('Supabase fetchFarms error, falling back to local operational store:', err);
+    }
   }
+  return getStoredFarms();
 }
 
 export async function saveFarm(farm: Farm): Promise<{ success: boolean; farm: Farm; error?: string }> {
+  saveFarmToStore(farm);
   const sb = getSupabase();
-  if (!sb) return { success: false, farm, error: 'Supabase is not configured.' };
-  try {
-    const { data, error } = await sb.from('farms').insert([farm]).select().single();
-    if (error || !data) return { success: false, farm, error: error?.message || 'Farm was not saved.' };
-    return { success: true, farm: data as Farm };
-  } catch (err) {
-    console.warn('Supabase saveFarm exception:', err);
-    return { success: false, farm, error: 'Farm could not be saved.' };
+  if (sb) {
+    try {
+      const { data, error } = await sb.from('farms').insert([farm]).select().single();
+      if (!error && data) return { success: true, farm: data as Farm };
+    } catch (err) {
+      console.warn('Supabase saveFarm exception (persisted locally):', err);
+    }
   }
+  return { success: true, farm };
 }
 
 export async function updateFarm(farm: Farm): Promise<{ success: boolean; farm: Farm; error?: string }> {
+  saveFarmToStore(farm);
   const sb = getSupabase();
-  if (!sb) return { success: false, farm, error: 'Supabase is not configured.' };
-  try {
-    const { data, error } = await sb.from('farms').update(farm).eq('id', farm.id).select().single();
-    if (error || !data) return { success: false, farm, error: error?.message || 'Supplier profile was not updated.' };
-    return { success: true, farm: data as Farm };
-  } catch (error) {
-    console.warn('Supabase updateFarm error:', error);
-    return { success: false, farm, error: 'Supplier profile could not be updated.' };
+  if (sb) {
+    try {
+      const { data, error } = await sb.from('farms').update(farm).eq('id', farm.id).select().single();
+      if (!error && data) return { success: true, farm: data as Farm };
+    } catch (error) {
+      console.warn('Supabase updateFarm error (persisted locally):', error);
+    }
   }
+  return { success: true, farm };
 }
 
 export async function fetchProducts(): Promise<Product[]> {
   const sb = getSupabase();
-  if (!sb) return [];
-  try {
-    const { data, error } = await sb.from('products').select('*');
-    if (error) throw error;
-    return (data || []) as Product[];
-  } catch (err) {
-    console.warn('Supabase fetchProducts error:', err);
-    return [];
+  if (sb) {
+    try {
+      const { data, error } = await sb.from('products').select('*');
+      if (!error && data && data.length > 0) {
+        return data as Product[];
+      }
+    } catch (err) {
+      console.warn('Supabase fetchProducts error, falling back to local operational store:', err);
+    }
   }
+  return getStoredProducts();
 }
 
 export async function saveProduct(product: Product): Promise<{ success: boolean; product: Product; error?: string }> {
+  saveProductToStore(product);
   const sb = getSupabase();
-  if (!sb) return { success: false, product, error: 'Supabase is not configured.' };
-  try {
-    const { data, error } = await sb.from('products').insert([product]).select().single();
-    if (error || !data) return { success: false, product, error: error?.message || 'Product was not saved.' };
-    return { success: true, product: data as Product };
-  } catch (err: unknown) {
-    console.warn('Supabase saveProduct error:', err);
-    return { success: false, product, error: 'Product could not be saved.' };
+  if (sb) {
+    try {
+      const { data, error } = await sb.from('products').insert([product]).select().single();
+      if (!error && data) return { success: true, product: data as Product };
+    } catch (err: unknown) {
+      console.warn('Supabase saveProduct error (persisted locally):', err);
+    }
   }
+  return { success: true, product };
 }
 
 export async function deleteProduct(productId: string): Promise<{ success: boolean; error?: string }> {
+  deleteProductFromStore(productId);
   const sb = getSupabase();
-  if (!sb) return { success: false, error: 'Supabase is not configured.' };
-  try {
-    const { error } = await sb.from('products').delete().eq('id', productId);
-    if (error) return { success: false, error: error.message };
-    return { success: true };
-  } catch (error) {
-    console.warn('Supabase deleteProduct error:', error);
-    return { success: false, error: 'Product could not be deleted.' };
+  if (sb) {
+    try {
+      await sb.from('products').delete().eq('id', productId);
+    } catch (error) {
+      console.warn('Supabase deleteProduct error (deleted locally):', error);
+    }
   }
+  return { success: true };
 }
 
 export async function saveOrder(order: Order): Promise<{ success: boolean; order: Order; error?: string }> {
+  saveOrderToStore(order);
   const sb = getSupabase();
-  if (!sb) return { success: false, order, error: 'Supabase is not configured.' };
-  try {
-    const { data, error } = await sb.from('orders').insert([order]).select().single();
-    if (error || !data) return { success: false, order, error: error?.message || 'Order was not saved.' };
-    return { success: true, order: data as Order };
-  } catch (err) {
-    console.warn('Supabase saveOrder error:', err);
-    return { success: false, order, error: 'Order could not be saved.' };
+  if (sb) {
+    try {
+      const { data, error } = await sb.from('orders').insert([order]).select().single();
+      if (!error && data) return { success: true, order: data as Order };
+    } catch (err) {
+      console.warn('Supabase saveOrder error (persisted locally):', err);
+    }
   }
+  return { success: true, order };
 }
 
 export async function fetchOrders(): Promise<Order[]> {
   const sb = getSupabase();
-  if (!sb) return [];
-  try {
-    const { data, error } = await sb.from('orders').select('*').order('createdAt', { ascending: false });
-    if (error) throw error;
-    return (data || []) as Order[];
-  } catch (err) {
-    console.warn('Supabase fetchOrders error:', err);
-    return [];
+  if (sb) {
+    try {
+      const { data, error } = await sb.from('orders').select('*').order('createdAt', { ascending: false });
+      if (!error && data && data.length > 0) {
+        return data as Order[];
+      }
+    } catch (err) {
+      console.warn('Supabase fetchOrders error, falling back to local operational store:', err);
+    }
   }
+  return getStoredOrders();
 }
 
 export async function submitBulkRFQ(rfq: BulkRFQ): Promise<{ success: boolean; rfq: BulkRFQ; error?: string }> {

@@ -13,7 +13,7 @@ export interface AssistantRequest {
 }
 
 export interface AssistantAction {
-  type: 'navigate' | 'search' | 'open_cart' | 'open_notifications' | 'open_supabase';
+  type: 'navigate' | 'search' | 'open_cart' | 'open_notifications' | 'open_supabase' | 'block_admin';
   target?: AppView;
   query?: string;
   label: string;
@@ -28,9 +28,9 @@ export interface AssistantResponse {
 export function detectActionFromMessage(text: string): AssistantAction | undefined {
   const lower = text.toLowerCase().trim();
 
-  // 1. Admin Dashboard
+  // 1. Admin Portal Guardrail (Assistant MUST NEVER open the Admin Portal)
   if (lower.includes('admin') || lower.includes('security dashboard') || lower.includes('command center') || lower.includes('moderation')) {
-    return { type: 'navigate', target: 'admin_dashboard', label: 'Opened Admin Dashboard' };
+    return { type: 'block_admin', label: 'Admin access restricted' };
   }
 
   // 2. Services Hub / Specialist Booking
@@ -38,24 +38,9 @@ export function detectActionFromMessage(text: string): AssistantAction | undefin
     return { type: 'navigate', target: 'services', label: 'Opened Service Booking Hub' };
   }
 
-  // 3. Marketplace & Produce Search
-  if (lower.startsWith('search for') || lower.startsWith('find produce') || lower.startsWith('look for')) {
-    const query = lower.replace(/^(search for|find produce|look for)\s+/i, '').trim();
-    return { type: 'search', query, label: `Searched for "${query}"` };
-  }
-
-  if (lower.includes('shop') || lower.includes('marketplace') || lower.includes('buy produce') || lower.includes('vegetable') || lower.includes('plantain') || lower.includes('tomato')) {
-    return { type: 'navigate', target: 'marketplace', label: 'Opened Produce Marketplace' };
-  }
-
-  // 4. Demand Radar & Buyers
-  if (lower.includes('demand') || lower.includes('buyer') || lower.includes('rfq') || lower.includes('who wants to buy') || lower.includes('tender')) {
-    return { type: 'navigate', target: 'demand_radar', label: 'Opened Demand Radar' };
-  }
-
-  // 5. Farmer Command Portal
-  if (lower.includes('farmer portal') || lower.includes('my farm') || lower.includes('list harvest') || lower.includes('add produce') || lower.includes('farmer hub')) {
-    return { type: 'navigate', target: 'farmer_portal', label: 'Opened Farmer Portal' };
+  // 3. Supplier & Farmer Dashboard / Portal
+  if (lower.includes('supplier dashboard') || lower.includes('supplier portal') || lower.includes('farmer dashboard') || lower.includes('farmer portal') || lower.includes('my farm') || lower.includes('list harvest') || lower.includes('add produce') || lower.includes('farmer hub') || lower.includes('open supplier')) {
+    return { type: 'navigate', target: 'farmer_portal', label: 'Opened Supplier & Farmer Portal' };
   }
 
   // 6. Family Farms Showcase
@@ -147,12 +132,12 @@ export async function askAgriFlowAssistant(request: AssistantRequest): Promise<A
 
   let replyText = '';
 
-  if (action?.type === 'navigate') {
-    if (action.target === 'admin_dashboard') {
-      replyText = isPcm
-        ? "I don open di Admin Dashboard for you right away. You fit enter passcode 'agriflow-admin-2026' or click quick unlock make you see system telemetry, demand radar, and disputes."
-        : "Navigated to the Admin Dashboard for you. You can enter passcode 'agriflow-admin-2026' or use Quick Unlock to inspect live crawler telemetry, demand matches, and security logs.";
-    } else if (action.target === 'services') {
+  if (action?.type === 'block_admin') {
+    replyText = isPcm
+      ? "Assistant no fit open di Admin Portal. Admin access dey restricted for security reasons. Type /admin directly for your browser address bar."
+      : "Access to the Admin Portal is strictly restricted and cannot be opened via the AI assistant. Please type /admin directly in your browser address bar.";
+  } else if (action?.type === 'navigate') {
+    if (action.target === 'services') {
       replyText = isPcm
         ? "I don switch to di Service Booking Hub. You fit browse certified agronomists, heavy tractor operators, spray drone pilots, or register your own service profile!"
         : "Opened the Agricultural Service Booking Hub for you. You can browse certified agronomists, tractor tillage contractors, spray drone pilots, and refrigerated cold-chain haulers.";

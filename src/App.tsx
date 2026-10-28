@@ -13,7 +13,8 @@ import type {
   EmailLog,
   SmsLog,
   DisputeReport,
-  SupplierPrivacySettings
+  SupplierPrivacySettings,
+  ServiceProvider
 } from './types';
 import {
   fetchFarms,
@@ -25,8 +26,8 @@ import {
   saveProduct,
   saveOrder,
   submitBulkRFQ,
-  getStoredSupabaseConfig
-  ,getSupabase
+  getStoredSupabaseConfig,
+  getSupabase
 } from './lib/supabase';
 import type { SupabaseConfig } from './lib/supabase';
 import { fetchDemandOpportunities } from './lib/demandRadar';
@@ -37,9 +38,10 @@ import {
   fetchEmailLogs,
   fetchSmsLogs,
   fetchDisputes,
-  addNotification
-  ,subscribeToNotifications
+  addNotification,
+  subscribeToNotifications
 } from './lib/communicationServices';
+import { getStoredServiceProviders } from './lib/agriflowStore';
 
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
@@ -62,6 +64,8 @@ import { AdminDashboardView } from './components/AdminDashboardView';
 import { NotificationDrawer } from './components/NotificationDrawer';
 import { AIAssistantWidget } from './components/AIAssistantWidget';
 import { ServiceHubView } from './components/ServiceHubView';
+import { SupplierProfileView } from './components/SupplierProfileView';
+import { ServiceProviderProfileView } from './components/ServiceProviderProfileView';
 import { DisputeModal } from './components/DisputeModal';
 import { SupplierPrivacyModal } from './components/SupplierPrivacyModal';
 import { Footer } from './components/Footer';
@@ -75,6 +79,7 @@ export function App() {
   const [farms, setFarms] = useState<Farm[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [serviceProviders, setServiceProviders] = useState<ServiceProvider[]>(() => getStoredServiceProviders());
   const [demandOpportunities, setDemandOpportunities] = useState<DemandOpportunity[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [emailLogs, setEmailLogs] = useState<EmailLog[]>([]);
@@ -96,6 +101,10 @@ export function App() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedRegion, setSelectedRegion] = useState<string>('all');
 
+  // Dedicated profile selectors
+  const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
+  const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null);
+
   // Modals & Drawers
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedFarmId, setSelectedFarmId] = useState<string | null>(null);
@@ -116,7 +125,26 @@ export function App() {
   const [privacyFarm, setPrivacyFarm] = useState<Farm | null>(null);
   const [activeChatId, setActiveChatId] = useState<string>('');
 
-  // Load initial data
+  // URL Route Synchronization (/admin route support)
+  useEffect(() => {
+    const syncRouteFromUrl = () => {
+      const pathname = window.location.pathname.replace(/\/$/, '');
+      const hash = window.location.hash;
+      if (pathname === '/admin' || hash === '#admin') {
+        setActiveView('admin_dashboard');
+      }
+    };
+
+    syncRouteFromUrl();
+    window.addEventListener('popstate', syncRouteFromUrl);
+    window.addEventListener('hashchange', syncRouteFromUrl);
+    return () => {
+      window.removeEventListener('popstate', syncRouteFromUrl);
+      window.removeEventListener('hashchange', syncRouteFromUrl);
+    };
+  }, []);
+
+  // Supabase Auth session listener
   useEffect(() => {
     const supabase = getSupabase();
     if (!supabase) {
@@ -135,45 +163,58 @@ export function App() {
     });
   }, [session?.user]);
 
+  // Load operational data (unconditionally loads from local-first shared operational store)
   useEffect(() => {
     async function loadData() {
-      if (!supabaseConfig.isConnected) {
-        setDataNotice('Live data is unavailable. Connect a Supabase project to load marketplace records.');
-        setFarms([]);
-        setProducts([]);
-        setOrders([]);
-        setDemandOpportunities([]);
-        setNotifications([]);
-        setEmailLogs([]);
-        setSmsLogs([]);
-        setDisputes([]);
-        return;
+      try {
+        const [
+          loadedFarms,
+          loadedProducts,
+          loadedOrders,
+          loadedOpps,
+          loadedNotifs,
+          loadedEmails,
+          loadedSms,
+          loadedDisputes
+        ] = await Promise.all([
+          fetchFarms(), fetchProducts(), fetchOrders(), fetchDemandOpportunities(),
+          fetchNotifications(), fetchEmailLogs(), fetchSmsLogs(), fetchDisputes()
+        ]);
+
+        setFarms(loadedFarms); 
+        setProducts(loadedProducts); 
+        setOrders(loadedOrders);
+        setDemandOpportunities(loadedOpps); 
+        setNotifications(loadedNotifs);
+        setEmailLogs(loadedEmails); 
+        setSmsLogs(loadedSms); 
+        setDisputes(loadedDisputes);
+        setServiceProviders(getStoredServiceProviders());
+        setDataNotice(null);
+      } catch (error: unknown) {
+        console.error('Data load error:', error);
       }
-
-      const [
-        loadedFarms,
-        loadedProducts,
-        loadedOrders,
-        loadedOpps,
-        loadedNotifs,
-        loadedEmails,
-        loadedSms,
-        loadedDisputes
-      ] = await Promise.all([
-        fetchFarms(), fetchProducts(), fetchOrders(), fetchDemandOpportunities(),
-        fetchNotifications(), fetchEmailLogs(), fetchSmsLogs(), fetchDisputes()
-      ]);
-
-      setFarms(loadedFarms); setProducts(loadedProducts); setOrders(loadedOrders);
-      setDemandOpportunities(loadedOpps); setNotifications(loadedNotifs);
-      setEmailLogs(loadedEmails); setSmsLogs(loadedSms); setDisputes(loadedDisputes);
-      setDataNotice(null);
     }
-    loadData().catch((error: unknown) => {
-      console.error('Live data load failed:', error);
-      setDataNotice('Live data could not be loaded. Check the Supabase URL, key, schema, and row-level policies.');
-    });
+    loadData();
   }, [supabaseConfig.isConnected]);
+
+  // Listen to cross-component data updates from central operational store
+  useEffect(() => {
+    const reloadOperationalData = async () => {
+      try {
+        const [f, p, o] = await Promise.all([fetchFarms(), fetchProducts(), fetchOrders()]);
+        setFarms(f);
+        setProducts(p);
+        setOrders(o);
+        setServiceProviders(getStoredServiceProviders());
+      } catch (err) {
+        console.warn('Failed to sync updated store data:', err);
+      }
+    };
+
+    window.addEventListener('agriflow-data-updated', reloadOperationalData);
+    return () => window.removeEventListener('agriflow-data-updated', reloadOperationalData);
+  }, []);
 
   // Save cart to local storage
   useEffect(() => {
@@ -351,7 +392,7 @@ export function App() {
   // Voice Assistant add produce helper
   const handleAddProduceVoice = (produceName: string, quantity: number, priceXaf: number) => {
     if (!farms[0]) {
-      setDataNotice('Voice listing requires a saved supplier profile. Connect Supabase and register a farm first.');
+      setDataNotice('Voice listing requires a saved supplier profile. Register a farm first.');
       return;
     }
     const farm = farms[0];
@@ -402,6 +443,15 @@ export function App() {
 
   const handleNavigateView = (view: AppView) => {
     setActiveView(view);
+    if (view === 'admin_dashboard') {
+      if (window.location.pathname !== '/admin') {
+        window.history.pushState(null, '', '/admin');
+      }
+    } else {
+      if (window.location.pathname === '/admin' || window.location.hash === '#admin') {
+        window.history.pushState(null, '', '/');
+      }
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -467,6 +517,7 @@ export function App() {
               <MarketplaceView
                 products={products}
                 farms={farms}
+                serviceProviders={serviceProviders}
                 activeCategory={activeCategory}
                 setActiveCategory={setActiveCategory}
                 searchQuery={searchQuery}
@@ -474,7 +525,15 @@ export function App() {
                 selectedRegion={selectedRegion}
                 onAddToCart={handleAddToCart}
                 onSelectProduct={setSelectedProduct}
-                onSelectFarm={setSelectedFarmId}
+                onSelectFarm={(farmId) => {
+                  setSelectedSupplierId(farmId);
+                  handleNavigateView('supplier_profile');
+                }}
+                onSelectProvider={(providerId) => {
+                  setSelectedProviderId(providerId);
+                  handleNavigateView('provider_profile');
+                }}
+                onNavigateServices={() => handleNavigateView('services')}
                 onOpenRFQ={() => setIsRFQModalOpen(true)}
               />
             </div>
@@ -488,6 +547,23 @@ export function App() {
               onFilterByFarm={handleFilterByFarm}
             />
           </>
+        )}
+
+        {/* Dedicated Full-Page Supplier Profile */}
+        {activeView === 'supplier_profile' && (
+          <SupplierProfileView
+            farmId={selectedSupplierId || (farms[0]?.id ?? 'farm-mbang-01')}
+            onAddToCart={handleAddToCart}
+            onBack={() => handleNavigateView('marketplace')}
+          />
+        )}
+
+        {/* Dedicated Full-Page Service Specialist Profile */}
+        {activeView === 'provider_profile' && (
+          <ServiceProviderProfileView
+            providerId={selectedProviderId || (serviceProviders[0]?.id ?? 'sp-01')}
+            onBack={() => handleNavigateView('services')}
+          />
         )}
 
         {/* Demand Radar View (Continuous Discovery of Buyer Requests) */}
@@ -509,7 +585,7 @@ export function App() {
           />
         )}
 
-        {/* Admin Dashboard & Observability View */}
+        {/* Admin Dashboard & Complete Platform Management View */}
         {activeView === 'admin_dashboard' && (
           <AdminDashboardView
             opportunities={demandOpportunities}
@@ -540,6 +616,10 @@ export function App() {
           <ServiceHubView
             onNavigateMarketplace={() => handleNavigateView('marketplace')}
             onOpenLiveChat={() => handleProtectedView('live_chat')}
+            onSelectProvider={(providerId) => {
+              setSelectedProviderId(providerId);
+              handleNavigateView('provider_profile');
+            }}
           />
         )}
 
@@ -561,7 +641,7 @@ export function App() {
           />
         )}
 
-        {/* Verified Farms Showcase Page */}
+        {/* Verified Suppliers & Farms Showcase Page */}
         {activeView === 'farms' && (
           <div style={{ padding: '20px 0' }}>
             <FarmStories
@@ -599,7 +679,7 @@ export function App() {
         {/* Soil Health & Sustainability Impact Page */}
         {activeView === 'impact' && (
           <ImpactView
-            isLiveDataAvailable={supabaseConfig.isConnected && farms.length > 0 && products.length > 0}
+            isLiveDataAvailable={farms.length > 0 && products.length > 0}
             onExploreFarms={() => handleNavigateView('farms')}
             onExploreMarket={() => handleNavigateView('marketplace')}
           />
@@ -643,7 +723,7 @@ export function App() {
               fontSize: '0.88rem',
               transition: 'all 0.2s ease'
             }}
-            title="AgriFlow AI Copilot (Background LLM Assistant)"
+            title="AgriFlow AI Copilot (Background Voice Assistant)"
           >
             <Sparkles size={18} color="#86efac" />
             <span>AgriFlow Copilot</span>
@@ -665,7 +745,8 @@ export function App() {
         onAddToCart={handleAddToCart}
         onSelectFarm={(farmId) => {
           setSelectedProduct(null);
-          setSelectedFarmId(farmId);
+          setSelectedSupplierId(farmId);
+          handleNavigateView('supplier_profile');
         }}
         onOpenRFQ={() => setIsRFQModalOpen(true)}
       />

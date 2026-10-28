@@ -10,7 +10,8 @@ import {
   Minus, 
   CheckCircle2, 
   RotateCcw,
-  Bot
+  Bot,
+  AlertCircle
 } from 'lucide-react';
 import type { AppView, VoiceLanguage, Product, DemandOpportunity } from '../types';
 import { askAgriFlowAssistant, detectActionFromMessage, type AssistantAction } from '../lib/aiAssistant';
@@ -51,16 +52,23 @@ export const AIAssistantWidget: React.FC<AIAssistantWidgetProps> = ({
 }) => {
   const [isMinimized, setIsMinimized] = useState<boolean>(false);
   const [language, setLanguage] = useState<VoiceLanguage>('en');
-  const [isSpeechEnabled, setIsSpeechEnabled] = useState<boolean>(false); // Audio off by default so no unwanted robotic voice
+  // Speech enabled by default with real voice responses
+  const [isSpeechEnabled, setIsSpeechEnabled] = useState<boolean>(true);
   const [isListening, setIsListening] = useState<boolean>(false);
   const [inputText, setInputText] = useState<string>('');
   const [isThinking, setIsThinking] = useState<boolean>(false);
+
+  // Inactivity / Liveness check state
+  const [showLivenessPrompt, setShowLivenessPrompt] = useState<boolean>(false);
+  const [livenessSecondsLeft, setLivenessSecondsLeft] = useState<number>(3);
+  const inactivityTimerRef = useRef<number | null>(null);
+  const countdownTimerRef = useRef<number | null>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>(() => [
     {
       id: 'msg-welcome',
       sender: 'assistant',
-      text: "Hello! I am your AgriFlow AI Copilot. Ask me questions about crops, market prices, or tell me to 'open admin panel', 'book a tractor in services', or 'find buyer demands' and I will execute it directly.",
+      text: "Hello! I am your AgriFlow AI Copilot. Ask me farming questions, or tell me to 'open supplier dashboard', 'open services', or 'find buyer demands' and I will navigate in the background.",
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
@@ -74,22 +82,86 @@ export const AIAssistantWidget: React.FC<AIAssistantWidgetProps> = ({
     }
   }, [messages, isOpen, isMinimized]);
 
-  // Speech Synthesis helper (only if enabled by user)
-  const speakText = (text: string) => {
-    if (!isSpeechEnabled || !('speechSynthesis' in window)) return;
+  // Clean up all liveness timers on unmount
+  useEffect(() => {
+    return () => {
+      if (inactivityTimerRef.current) window.clearTimeout(inactivityTimerRef.current);
+      if (countdownTimerRef.current) window.clearInterval(countdownTimerRef.current);
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    };
+  }, []);
+
+  const resetLivenessTimers = () => {
+    if (inactivityTimerRef.current) {
+      window.clearTimeout(inactivityTimerRef.current);
+      inactivityTimerRef.current = null;
+    }
+    if (countdownTimerRef.current) {
+      window.clearInterval(countdownTimerRef.current);
+      countdownTimerRef.current = null;
+    }
+    setShowLivenessPrompt(false);
+    setLivenessSecondsLeft(3);
+  };
+
+  const scheduleLivenessCheck = () => {
+    resetLivenessTimers();
+    // After 6 seconds of inactivity, prompt the user
+    inactivityTimerRef.current = window.setTimeout(() => {
+      setShowLivenessPrompt(true);
+      setLivenessSecondsLeft(3);
+      speakText("Are you still available to continue the chat?");
+
+      let remaining = 3;
+      countdownTimerRef.current = window.setInterval(() => {
+        remaining -= 1;
+        setLivenessSecondsLeft(remaining);
+        if (remaining <= 0) {
+          if (countdownTimerRef.current) {
+            window.clearInterval(countdownTimerRef.current);
+            countdownTimerRef.current = null;
+          }
+          setShowLivenessPrompt(false);
+          setIsListening(false);
+          // Assistant remains docked and quiet on the page
+        }
+      }, 1000);
+    }, 6000);
+  };
+
+  // Speech Synthesis helper
+  const speakText = (text: string, onEnd?: () => void) => {
+    if (!isSpeechEnabled || !('speechSynthesis' in window)) {
+      onEnd?.();
+      return;
+    }
     window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 1.0;
     utterance.pitch = 1.0;
     utterance.lang = language === 'pcm' ? 'en-NG' : 'en-US';
+
+    utterance.onend = () => {
+      onEnd?.();
+    };
+    utterance.onerror = () => {
+      onEnd?.();
+    };
+
     window.speechSynthesis.speak(utterance);
   };
 
   const executeAction = (action?: AssistantAction): string | undefined => {
     if (!action) return undefined;
 
+    // Block admin portal opening
+    if (action.type === 'block_admin') {
+      return "Admin access restricted - cannot be opened via assistant";
+    }
+
     if (action.type === 'navigate' && action.target) {
+      // Execute in background; assistant stays open and docked
       onNavigate(action.target);
       return action.label;
     }
@@ -116,6 +188,7 @@ export const AIAssistantWidget: React.FC<AIAssistantWidgetProps> = ({
     const text = (textToSend || inputText).trim();
     if (!text || isThinking) return;
 
+    resetLivenessTimers();
     setInputText('');
 
     const userMsg: ChatMessage = {
@@ -160,18 +233,24 @@ export const AIAssistantWidget: React.FC<AIAssistantWidgetProps> = ({
       };
 
       setMessages(prev => [...prev, assistantMsg]);
-      if (isSpeechEnabled) {
-        speakText(response.message);
-      }
-    } catch (err) {
+      
+      // Speak aloud and start liveness timer when speech concludes
+      speakText(response.message, () => {
+        scheduleLivenessCheck();
+      });
+    } catch {
+      const fallbackText = "I am ready to assist. You can ask me to open services, supplier portal, or marketplace, or check crop prices.";
       const errorMsg: ChatMessage = {
         id: `msg-err-${Date.now()}`,
         sender: 'assistant',
-        text: "I am ready to assist. You can ask me to open any page (Admin, Services, Marketplace, Logistics) or inspect harvest prices.",
+        text: fallbackText,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         actionExecuted: executedLabel
       };
       setMessages(prev => [...prev, errorMsg]);
+      speakText(fallbackText, () => {
+        scheduleLivenessCheck();
+      });
     } finally {
       setIsThinking(false);
     }
@@ -179,6 +258,7 @@ export const AIAssistantWidget: React.FC<AIAssistantWidgetProps> = ({
 
   // Speech Recognition toggle
   const handleToggleMic = () => {
+    resetLivenessTimers();
     if (isListening) {
       setIsListening(false);
       return;
@@ -215,6 +295,7 @@ export const AIAssistantWidget: React.FC<AIAssistantWidgetProps> = ({
   };
 
   const handleResetChat = () => {
+    resetLivenessTimers();
     setMessages([
       {
         id: `msg-welcome-${Date.now()}`,
@@ -243,7 +324,10 @@ export const AIAssistantWidget: React.FC<AIAssistantWidgetProps> = ({
       }}>
         <button
           type="button"
-          onClick={() => setIsMinimized(false)}
+          onClick={() => {
+            setIsMinimized(false);
+            resetLivenessTimers();
+          }}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -322,63 +406,71 @@ export const AIAssistantWidget: React.FC<AIAssistantWidgetProps> = ({
               width: '8px',
               height: '8px',
               borderRadius: '50%',
-              backgroundColor: '#34d399',
-              border: '2px solid var(--primary-950)'
+              backgroundColor: '#22c55e',
+              border: '1.5px solid var(--primary-950)'
             }} />
           </div>
-
           <div>
             <div style={{ fontSize: '0.92rem', fontWeight: 800, fontFamily: 'var(--font-heading)' }}>
               AgriFlow Copilot
             </div>
             <div style={{ fontSize: '0.68rem', color: '#86efac', fontWeight: 600 }}>
-              Background LLM Active
+              Background Voice & Navigator
             </div>
           </div>
         </div>
 
-        {/* Header Controls */}
+        {/* Controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          {/* Language Toggle */}
-          <button
-            type="button"
-            onClick={() => setLanguage(l => l === 'en' ? 'pcm' : 'en')}
-            style={{
-              padding: '3px 8px',
-              borderRadius: 'var(--radius-full)',
-              backgroundColor: 'rgba(255,255,255,0.1)',
-              border: '1px solid rgba(255,255,255,0.2)',
-              color: '#ffffff',
-              fontSize: '0.68rem',
-              fontWeight: 800,
-              cursor: 'pointer'
+          
+          {/* Language Selector */}
+          <select
+            value={language}
+            onChange={(e) => {
+              setLanguage(e.target.value as VoiceLanguage);
+              resetLivenessTimers();
             }}
-            title="Toggle between English and Cameroonian Pidgin"
+            style={{
+              padding: '3px 6px',
+              borderRadius: '6px',
+              fontSize: '0.72rem',
+              backgroundColor: 'rgba(255, 255, 255, 0.12)',
+              color: '#ffffff',
+              border: 'none',
+              cursor: 'pointer',
+              fontWeight: 700
+            }}
           >
-            {language === 'en' ? 'EN' : 'PIDGIN'}
-          </button>
+            <option value="en" style={{ color: '#000000' }}>EN (English)</option>
+            <option value="pcm" style={{ color: '#000000' }}>PCM (Pidgin)</option>
+          </select>
 
-          {/* Voice Audio Read-Aloud Toggle */}
+          {/* Voice Output Mute/Unmute */}
           <button
             type="button"
-            onClick={() => setIsSpeechEnabled(!isSpeechEnabled)}
+            onClick={() => {
+              setIsSpeechEnabled(!isSpeechEnabled);
+              if (isSpeechEnabled && 'speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+              }
+            }}
             style={{
               padding: '5px',
               borderRadius: '6px',
-              backgroundColor: isSpeechEnabled ? 'var(--primary-700)' : 'transparent',
+              backgroundColor: isSpeechEnabled ? 'rgba(52, 211, 153, 0.2)' : 'transparent',
               border: 'none',
-              color: isSpeechEnabled ? '#86efac' : 'rgba(255,255,255,0.6)',
+              color: isSpeechEnabled ? '#86efac' : 'rgba(255,255,255,0.4)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}
-            title={isSpeechEnabled ? "Voice audio read-aloud: ON" : "Voice audio read-aloud: OFF"}
+            title={isSpeechEnabled ? "Voice output enabled (click to mute)" : "Voice output muted (click to enable)"}
           >
             {isSpeechEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
           </button>
 
-          {/* Reset Chat */}
+          {/* Reset chat */}
           <button
             type="button"
             onClick={handleResetChat}
@@ -393,7 +485,7 @@ export const AIAssistantWidget: React.FC<AIAssistantWidgetProps> = ({
               alignItems: 'center',
               justifyContent: 'center'
             }}
-            title="Clear Chat History"
+            title="Clear Chat"
           >
             <RotateCcw size={15} />
           </button>
@@ -440,7 +532,7 @@ export const AIAssistantWidget: React.FC<AIAssistantWidgetProps> = ({
         </div>
       </div>
 
-      {/* Suggested Quick Prompt Chips */}
+      {/* Suggested Quick Prompt Chips (NO Admin Button!) */}
       <div style={{
         padding: '8px 12px',
         backgroundColor: 'var(--bg-subtle)',
@@ -452,7 +544,7 @@ export const AIAssistantWidget: React.FC<AIAssistantWidgetProps> = ({
         scrollbarWidth: 'none'
       }}>
         {[
-          { label: '🛡️ Open Admin Panel', cmd: 'Open admin panel' },
+          { label: '🌾 Supplier Portal', cmd: 'Open supplier dashboard' },
           { label: '🛠️ Service Hub', cmd: 'Open service hub' },
           { label: '🚜 Find Tractor Operator', cmd: 'Find a tractor operator in services' },
           { label: '📡 Check Buyer RFQs', cmd: 'Show demand radar' },
@@ -478,6 +570,45 @@ export const AIAssistantWidget: React.FC<AIAssistantWidgetProps> = ({
           </button>
         ))}
       </div>
+
+      {/* Inactivity Liveness Banner */}
+      {showLivenessPrompt && (
+        <div style={{
+          backgroundColor: '#fef3c7',
+          borderBottom: '1px solid #fde68a',
+          padding: '8px 14px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          fontSize: '0.78rem',
+          color: '#92400e',
+          animation: 'fadeIn 0.2s ease'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <AlertCircle size={15} color="#b45309" />
+            <span><strong>Are you still available?</strong> (Stopping in {livenessSecondsLeft}s)</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              resetLivenessTimers();
+              speakText("I am listening! What would you like to explore?");
+            }}
+            style={{
+              backgroundColor: '#b45309',
+              color: '#ffffff',
+              border: 'none',
+              padding: '3px 8px',
+              borderRadius: '4px',
+              fontWeight: 700,
+              fontSize: '0.72rem',
+              cursor: 'pointer'
+            }}
+          >
+            Yes, I'm here
+          </button>
+        </div>
+      )}
 
       {/* Messages Scroll Area */}
       <div style={{
@@ -521,8 +652,8 @@ export const AIAssistantWidget: React.FC<AIAssistantWidgetProps> = ({
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '4px',
-                  backgroundColor: '#dcfce7',
-                  color: '#15803d',
+                  backgroundColor: msg.actionExecuted.includes('restricted') ? '#fee2e2' : '#dcfce7',
+                  color: msg.actionExecuted.includes('restricted') ? '#991b1b' : '#15803d',
                   fontSize: '0.72rem',
                   fontWeight: 800,
                   padding: '3px 8px',
@@ -554,7 +685,7 @@ export const AIAssistantWidget: React.FC<AIAssistantWidgetProps> = ({
             color: 'var(--text-muted)'
           }}>
             <Sparkles size={14} className="animate-spin" color="var(--primary-600)" />
-            <span>Thinking & executing...</span>
+            <span>Executing in background...</span>
           </div>
         )}
 
@@ -600,9 +731,12 @@ export const AIAssistantWidget: React.FC<AIAssistantWidgetProps> = ({
 
         <input
           type="text"
-          placeholder={language === 'pcm' ? "Type command or wetin you need..." : "Ask questions or type 'open admin'..."}
+          placeholder={language === 'pcm' ? "Type command or wetin you need..." : "Ask questions or say 'open supplier portal'..."}
           value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
+          onChange={(e) => {
+            setInputText(e.target.value);
+            resetLivenessTimers();
+          }}
           style={{
             flex: 1,
             padding: '9px 12px',
