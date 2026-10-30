@@ -405,8 +405,13 @@ Hello Phil! Your workspace is linked and listening.
   }
 
   // Start continuous polling loop
-  pollUpdates();
+  await pollUpdates();
 }
+
+// Keep process active with periodic heartbeat
+setInterval(() => {
+  console.log(`[Heartbeat] Antigravity Telegram Agent polling... (${new Date().toLocaleTimeString()})`);
+}, 300000);
 
 // Handle termination signals cleanly
 process.on('SIGINT', () => {
