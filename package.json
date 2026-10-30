@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "telegram": "node scripts/telegram-agent.mjs",
+    "telegram:notify": "node scripts/notify-telegram.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",
