@@ -1,13 +1,22 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { exec } from 'node:child_process';
+import { exec, spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const WORKSPACE_DIR = path.resolve(__dirname, '..');
 
-// 1. Load environment variables from .env
+// 1. Global Process Safety Handlers (Prevent Unhandled Crashes)
+process.on('uncaughtException', (err) => {
+  console.error('[Safety] Uncaught Exception:', err?.message || err);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[Safety] Unhandled Rejection:', reason);
+});
+
+// 2. Load environment variables from .env
 function loadEnv() {
   const envPath = path.join(WORKSPACE_DIR, '.env');
   const env = { ...process.env };
@@ -37,7 +46,7 @@ if (!BOT_TOKEN) {
   process.exit(1);
 }
 
-// 2. Telegram API Helpers
+// 3. Telegram API Helpers
 async function callTelegram(method, payload) {
   try {
     const res = await fetch(`${TELEGRAM_API}/${method}`, {
@@ -53,11 +62,12 @@ async function callTelegram(method, payload) {
 }
 
 async function sendTyping(chatId) {
-  await callTelegram('sendChatAction', { chat_id: chatId, action: 'typing' });
+  try {
+    await callTelegram('sendChatAction', { chat_id: chatId, action: 'typing' });
+  } catch {}
 }
 
 async function sendMessage(chatId, text, extra = {}) {
-  // Telegram limits text to 4096 characters per message
   const MAX_LEN = 3900;
   if (text.length <= MAX_LEN) {
     let res = await callTelegram('sendMessage', {
@@ -67,7 +77,7 @@ async function sendMessage(chatId, text, extra = {}) {
       ...extra
     });
     // Fallback without Markdown if parsing error occurred
-    if (!res.ok && res.description && res.description.includes('can\'t parse entities')) {
+    if (!res.ok && res.description && res.description.includes("can't parse entities")) {
       res = await callTelegram('sendMessage', {
         chat_id: chatId,
         text,
@@ -82,30 +92,126 @@ async function sendMessage(chatId, text, extra = {}) {
   for (let i = 0; i < text.length; i += MAX_LEN) {
     chunks.push(text.slice(i, i + MAX_LEN));
   }
+  let lastRes = { ok: true };
   for (const chunk of chunks) {
-    await callTelegram('sendMessage', {
+    lastRes = await callTelegram('sendMessage', {
       chat_id: chatId,
       text: chunk,
       ...extra
     });
   }
+  return lastRes;
 }
 
-// 3. Command Exec Helper
+// 4. Command Exec Helper with Timeout Safeguard
 function runShell(command, cwd = WORKSPACE_DIR, timeoutMs = 60000) {
   return new Promise((resolve) => {
-    exec(command, { cwd, timeout: timeoutMs, maxBuffer: 1024 * 1024 * 4 }, (error, stdout, stderr) => {
-      resolve({
-        success: !error,
-        stdout: (stdout || '').trim(),
-        stderr: (stderr || '').trim(),
-        exitCode: error ? error.code || 1 : 0
+    try {
+      exec(command, { cwd, timeout: timeoutMs, maxBuffer: 1024 * 1024 * 4 }, (error, stdout, stderr) => {
+        if (error && error.killed) {
+          resolve({
+            success: false,
+            stdout: (stdout || '').trim(),
+            stderr: '⏱️ Command execution timed out after 60 seconds.',
+            exitCode: 124
+          });
+          return;
+        }
+        resolve({
+          success: !error,
+          stdout: (stdout || '').trim(),
+          stderr: (stderr || '').trim(),
+          exitCode: error ? error.code || 1 : 0
+        });
       });
-    });
+    } catch (err) {
+      resolve({
+        success: false,
+        stdout: '',
+        stderr: err?.message || 'Execution error',
+        exitCode: 1
+      });
+    }
   });
 }
 
-// 4. AgriFlow Catalog Quick Lookup
+// 5. Dev Server Lifecycle Manager
+async function checkDevServer(timeoutMs = 1500) {
+  try {
+    const startTime = Date.now();
+    const res = await fetch('http://localhost:5173/', { signal: AbortSignal.timeout(timeoutMs) });
+    const latency = Date.now() - startTime;
+    return { online: res.ok, status: res.status, latency };
+  } catch {
+    return { online: false, status: 0, latency: 0 };
+  }
+}
+
+async function startDevServer(chatId) {
+  const current = await checkDevServer(1000);
+  if (current.online) {
+    await sendMessage(
+      chatId,
+      `🟢 *Vite Dev Server is already online!*\n• Local URL: http://localhost:5173\n• Status: \`HTTP ${current.status} OK\` (${current.latency}ms)\n\n• Stop: \`/dev stop\`\n• Restart: \`/dev restart\``,
+      MAIN_KEYBOARD
+    );
+    return;
+  }
+
+  await sendMessage(chatId, `🚀 *Launching Vite Dev Server in background...*\nCommand: \`npm run dev\``);
+
+  try {
+    const child = spawn('npm', ['run', 'dev'], {
+      cwd: WORKSPACE_DIR,
+      detached: true,
+      stdio: 'ignore'
+    });
+    child.unref();
+
+    // Poll for up to 8 seconds to confirm server readiness
+    let ready = false;
+    let latency = 0;
+    for (let i = 0; i < 16; i++) {
+      await new Promise((r) => setTimeout(r, 500));
+      const check = await checkDevServer(600);
+      if (check.online) {
+        ready = true;
+        latency = check.latency;
+        break;
+      }
+    }
+
+    if (ready) {
+      await sendMessage(
+        chatId,
+        `✅ *Vite Dev Server is Live & Responding!*\n• URL: http://localhost:5173\n• Port: \`5173\`\n• Status: \`HTTP 200 OK\` (${latency}ms)\n• PID: \`${child.pid}\`\n\nYou can test the web app or run \`/status\`.`,
+        MAIN_KEYBOARD
+      );
+    } else {
+      await sendMessage(
+        chatId,
+        `⚠️ *Dev server process started (PID: ${child.pid})*, but port 5173 is taking longer than usual to respond.\nCheck again with \`/dev\` in a moment.`,
+        MAIN_KEYBOARD
+      );
+    }
+  } catch (err) {
+    await sendMessage(chatId, `❌ *Failed to spawn dev server:* ${err.message}`, MAIN_KEYBOARD);
+  }
+}
+
+async function stopDevServer(chatId) {
+  await sendMessage(chatId, `⏹️ *Stopping Vite Dev Server...*`);
+  await runShell(`pkill -f 'node.*vite' || fuser -k 5173/tcp || true`);
+  await new Promise((r) => setTimeout(r, 1000));
+  const check = await checkDevServer(800);
+  if (!check.online) {
+    await sendMessage(chatId, `⚪ *Vite Dev Server stopped.* Port 5173 is now free.`, MAIN_KEYBOARD);
+  } else {
+    await sendMessage(chatId, `⚠️ *Dev server might still be stopping.* Run \`/dev\` to verify.`, MAIN_KEYBOARD);
+  }
+}
+
+// 6. AgriFlow Produce Gate Catalog
 function getCatalogData() {
   return [
     { name: 'Penja Protected White Pepper (PGI)', priceXaf: 14500, priceUsd: 24.15, unit: 'kg', stock: '850 kg', farm: 'Mbang Agro-Ecological' },
@@ -118,7 +224,7 @@ function getCatalogData() {
   ];
 }
 
-// 5. Intelligent AI Query Helper
+// 7. Intelligent AI Query Helper with Knowledge Integration
 async function queryAiAssistant(userPrompt) {
   const providers = [
     { key: env.GROQ_API_KEY, url: 'https://api.groq.com/openai/v1/chat/completions', model: 'llama-3.3-70b-versatile' },
@@ -162,10 +268,10 @@ Be concise, accurate, helpful, and direct. Skip corporate fluff. Use clear markd
   }
 
   // Fallback local agent response
-  return `🤖 *Antigravity Remote Agent*\n\nReceived your query: "${userPrompt}".\n\nYour workspace is active at \`/home/philding/Desktop/apps/winning-project\`.\nUse /status, /build, /git, or /run <command> for workspace operations.`;
+  return `🤖 *Antigravity Remote Agent*\n\nReceived your query: "${userPrompt}".\n\nYour workspace is active at \`/home/philding/Desktop/apps/winning-project\`.\nUse /status, /build, /dev, /git, or /run <command> for workspace operations.`;
 }
 
-// 6. Main Interactive Keyboard
+// 8. Main Interactive Mobile Keyboard
 const MAIN_KEYBOARD = {
   reply_markup: {
     keyboard: [
@@ -178,7 +284,7 @@ const MAIN_KEYBOARD = {
   }
 };
 
-// 7. Message Router
+// 9. Message Router
 async function handleMessage(message) {
   const chatId = message.chat.id;
   const fromId = String(message.from?.id || '');
@@ -206,12 +312,15 @@ async function handleMessage(message) {
 🌱 *Project:* AgriFlow Cameroon Agribusiness Exchange
 
 *Available Remote Commands:*
-• 📊 \`/status\` - Git branch, dev server health, and system telemetry
+• 📊 \`/status\` - Git branch, dev server health, disk & system telemetry
 • 🔨 \`/build\` - Run full TypeScript + Vite production build
-• ⚡ \`/dev\` - Verify Vite dev server connectivity (Port 5173)
-• 📦 \`/git <cmd>\` - Execute git commands (e.g. \`/git status\`, \`/git log\`)
+• ⚡ \`/dev\` - Check Vite dev server status
+• ⚡ \`/dev start\` - Launch Vite dev server in background
+• ⏹️ \`/dev stop\` - Stop Vite dev server (frees port 5173)
+• 🔄 \`/dev restart\` - Cleanly restart Vite dev server
+• 📦 \`/git <cmd>\` - Execute git commands (e.g. \`/git status\`, \`/git diff\`, \`/git push\`)
 • 🌾 \`/crops\` or \`/price <name>\` - Check live produce gate prices (FCFA)
-• 🚀 \`/run <command>\` - Execute any shell command in the project directory
+• 🚀 \`/run <command>\` - Execute any shell command in the workspace
 • 💬 *Any regular text* - Query your Antigravity AI Assistant directly!
 
 Use the buttons below for instant 1-tap actions:`;
@@ -224,16 +333,13 @@ Use the buttons below for instant 1-tap actions:`;
     const gitBranch = await runShell('git rev-parse --abbrev-ref HEAD');
     const gitChanges = await runShell('git status -s');
     const gitCommit = await runShell('git log -1 --pretty=format:"%h - %s (%cr)"');
-    const diskInfo = await runShell('df -h . | tail -1 | awk \'{print $4 " free of " $2}\'');
+    const diskInfo = await runShell("df -h . | tail -1 | awk '{print $4 \" free of \" $2}'");
     
     // Check local dev server
-    let devStatus = '🔴 Offline';
-    try {
-      const devRes = await fetch('http://localhost:5173/', { signal: AbortSignal.timeout(1500) });
-      if (devRes.ok) devStatus = '🟢 Online (http://localhost:5173)';
-    } catch {
-      devStatus = '⚪ Not running or port 5173 unreachable';
-    }
+    const dev = await checkDevServer(1200);
+    const devStatus = dev.online 
+      ? `🟢 Online (http://localhost:5173, ${dev.latency}ms)`
+      : `⚪ Offline (use /dev start)`;
 
     const changedCount = gitChanges.stdout ? gitChanges.stdout.split('\n').filter(Boolean).length : 0;
 
@@ -269,19 +375,38 @@ ${changedCount > 0 ? `*Modified files:*\n\`\`\`\n${gitChanges.stdout.slice(0, 50
     return;
   }
 
-  // /dev or "⚡ Dev Server"
-  if (lower === '/dev' || lower === '⚡ dev server' || lower === '/server') {
-    try {
-      const startTime = Date.now();
-      const res = await fetch('http://localhost:5173/', { signal: AbortSignal.timeout(3000) });
-      const latency = Date.now() - startTime;
-      if (res.ok) {
-        await sendMessage(chatId, `🟢 *Vite Dev Server is Live & Responding!*\n• Port: \`5173\`\n• Status: \`HTTP ${res.status} OK\`\n• Latency: \`${latency}ms\`\n• Local URL: http://localhost:5173`, MAIN_KEYBOARD);
-      } else {
-        await sendMessage(chatId, `🟡 *Dev Server Responded with HTTP ${res.status}*`, MAIN_KEYBOARD);
-      }
-    } catch (err) {
-      await sendMessage(chatId, `⚪ *Vite Dev Server is not currently reachable*\nError: \`${err.message}\`\nYou can start it with: \`/run npm run dev\``, MAIN_KEYBOARD);
+  // /dev commands
+  if (lower === '/dev start') {
+    await startDevServer(chatId);
+    return;
+  }
+
+  if (lower === '/dev stop') {
+    await stopDevServer(chatId);
+    return;
+  }
+
+  if (lower === '/dev restart') {
+    await stopDevServer(chatId);
+    await startDevServer(chatId);
+    return;
+  }
+
+  // /dev status or "⚡ Dev Server"
+  if (lower === '/dev' || lower === '⚡ dev server' || lower === '/dev status' || lower === '/server') {
+    const dev = await checkDevServer(1800);
+    if (dev.online) {
+      await sendMessage(
+        chatId,
+        `🟢 *Vite Dev Server is Live!*\n• URL: http://localhost:5173\n• Status: \`HTTP ${dev.status} OK\`\n• Latency: \`${dev.latency}ms\`\n• Port: \`5173\`\n\nCommands:\n• Stop: \`/dev stop\`\n• Restart: \`/dev restart\``,
+        MAIN_KEYBOARD
+      );
+    } else {
+      await sendMessage(
+        chatId,
+        `⚪ *Vite Dev Server is currently Offline*\nPort 5173 is idle.\n\n👉 Send \`/dev start\` to launch it now in the background!`,
+        MAIN_KEYBOARD
+      );
     }
     return;
   }
@@ -327,6 +452,18 @@ ${changedCount > 0 ? `*Modified files:*\n\`\`\`\n${gitChanges.stdout.slice(0, 50
       return;
     }
 
+    // Intercept dev server commands so they run safely as background daemon
+    if (cmd === 'npm run dev' || cmd === 'vite' || cmd === 'npx vite' || cmd === 'npm start') {
+      await startDevServer(chatId);
+      return;
+    }
+
+    // Intercept dev server stop command
+    if (cmd === 'kill vite' || cmd === 'npm run dev stop' || cmd === 'stop dev') {
+      await stopDevServer(chatId);
+      return;
+    }
+
     await sendMessage(chatId, `⚙️ *Executing:* \`${cmd}\`...`);
     const startTime = Date.now();
     const result = await runShell(cmd);
@@ -344,7 +481,7 @@ ${changedCount > 0 ? `*Modified files:*\n\`\`\`\n${gitChanges.stdout.slice(0, 50
   await sendMessage(chatId, aiAnswer, MAIN_KEYBOARD);
 }
 
-// 8. Long-Polling Loop
+// 10. Long-Polling Loop with Auto-Recovery
 let lastUpdateId = 0;
 let isPolling = true;
 
@@ -361,20 +498,23 @@ async function pollUpdates() {
         for (const update of data.result) {
           lastUpdateId = update.update_id;
           if (update.message) {
-            handleMessage(update.message).catch(err => {
+            handleMessage(update.message).catch((err) => {
               console.error('Error handling message:', err);
             });
           }
         }
+      } else if (!data.ok) {
+        console.warn('Telegram getUpdates returned not ok:', data);
+        await new Promise((r) => setTimeout(r, 3000));
       }
     } catch (err) {
-      console.error('Polling connection warning:', err.message);
-      await new Promise(r => setTimeout(r, 4000));
+      console.error('Polling connection warning:', err?.message || err);
+      await new Promise((r) => setTimeout(r, 4000));
     }
   }
 }
 
-// 9. Startup & Handshake
+// 11. Startup & Handshake
 async function startBot() {
   console.log(`🤖 Starting Antigravity Telegram Agent...`);
   console.log(`👤 Target User ID: ${ALLOWED_USER_ID}`);
@@ -388,12 +528,13 @@ async function startBot() {
     process.exit(1);
   }
 
-  // Send boot notification to Phil
+  // Send update notification to Phil
   const bootMsg = `🚀 *Antigravity Remote Agent Connected!*
 
-Hello Phil! Your workspace is linked and listening.
+Hello Phil! Your workspace daemon is online and listening.
 • Branch: \`main\`
 • Workspace: \`${WORKSPACE_DIR}\`
+• Dev server control: \`/dev start\`, \`/dev stop\`, \`/dev restart\`
 • Type \`/help\` or tap buttons below to start.`;
 
   const handshake = await sendMessage(ALLOWED_USER_ID, bootMsg, MAIN_KEYBOARD);
